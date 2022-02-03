@@ -13,7 +13,8 @@ IIIF features:
 - Cantaloupe image server <=> Image API 2.1
 - FastAPI implementation <=> Presentation API 2.1
 - Automated manifest creation from CSV files
-- Tify viewer
+- IIIF manifests creation based on [Prezi](https://github.com/iiif-prezi/iiif-prezi)
+- [Tify viewer](https://github.com/tify-iiif-viewer/tify)
 
 <br>
 
@@ -28,9 +29,11 @@ Here, we have removed some backend (`Traeffik`) and frontend (authentication, UI
 #### Backend
 You should use the `main` branch, other branches being used for development purpose.
 
+Fetch all the Git LFS resources: `git lfs fetch --all && git lfs pull`
+
 You might have to tweak the `volumes` of the `papel_nginx` service to import your own certificate provider directory.
 
-You have create the required `nginx` configuration files:
+You have to create the required `nginx` configuration files:
 - `certificate.json`
 - `app_docker.conf`
 - `monitor_docker.conf`
@@ -69,12 +72,17 @@ docker-compose docker-compose.yml up
 
 \+ monitoring containers
 ```
-docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up
+docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up
 ```
 
-\+ dummy app (including test container)
+\+ with Brif app (including test container)
 ```
-docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml up
+docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml up
+```
+
+\+ only live containers (tagged with 'prod_live' profile)
+```
+docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml --profile live_prod up
 ```
 <br>
 
@@ -100,10 +108,7 @@ pre-commit install
 
 
 ## DRAFT
-git lfs fetch --all
+
 locally: data/input folder
 local param / volumes
 data workflow explanations
-main package ref: prezi, tify,
-sudo docker-compose -f docker-compose.yml -f docker-compose.brif.yml -f docker-compose.monitoring.yml -f muz_app/docker-compose.muz.yml --profile live_prod up --build
-git lfs pull

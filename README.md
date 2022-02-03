@@ -3,25 +3,21 @@
 
 A boilerplate tool based on Docker, designed to streamline the development and deployment of IIIF compliant platforms.
 
-Embedded with:
-- FastAPI
-- Celery + Rabbit-MQ + Flower
-- Postgres + PGAdmin
-- Nginx
-- Bulma
+Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Nginx, Bulma`.
 
 IIIF features:
 - Cantaloupe image server <=> Image API 2.1
 - FastAPI implementation <=> Presentation API 2.1
 - Automated manifest creation from CSV files
 - IIIF manifests creation based on [Prezi](https://github.com/iiif-prezi/iiif-prezi)
-- [Tify viewer](https://github.com/tify-iiif-viewer/tify)
+- [Tify viewer](https://github.com/tify-iiif-viewer/tify) directly embedded with each manifest
 
 <br>
 
 ### Reference
 This repository is based on the [Papel](https://github.com/pierrz/papel) template repository designed to quickly deploy API based pipelines. 
 <br>
+The tiny dataset and 6 related images used as test material come from the Finnish National Gallery [Open Data platform](https://www.kansallisgalleria.fi/en/api-sovelluskehittajille).
 
 ### Installation
 #### Backend
@@ -31,12 +27,12 @@ Fetch all the Git LFS resources: `git lfs fetch --all && git lfs pull`
 
 You might have to tweak the `volumes` of the `brif_nginx` service to import your own certificate provider directory.
 
-You have to create the required `nginx` configuration files:
+You have to create the required `nginx` [configuration files](setup/nginx):
 - `certificate.json`
 - `app_docker.conf`
 - `monitor_docker.conf`
 
-Same goes with `servers.json` if you use the `pgadmin` container.
+Same goes with [servers.json](setup/pgadmin/servers.json.example) if you use the `pgadmin` container.
 
 Then you're left with creating the `.env` environment file.
 
@@ -46,13 +42,13 @@ Then you're left with creating the `.env` environment file.
 
 #### Cantaloupe
 Mount your images as volumes in the `cantaloupe` service and set `FilesystemSource.BasicLookupStrategy.path_prefix` in `cantaloupe.properties` accordingly to get things going.
-You will also have to implement this location in `./setup/cantaloupe/Dockerfile`.
+You will also have to implement this location in [cantaloupe.properties](setup/cantaloupe/cantaloupe.properties.example).
 From there, you can easily set your logs, enable/disable different API version number (i.e. from to 3) as it follows the very [official documentation](https://cantaloupe-project.github.io/).
 
 <br>
 
 #### Frontend
-You can add your own `head_meta.html`, or discard it from `base.html` while implementing up the `{title}` tag again.
+You can add your own  [head_meta.html](app/templates/html/head_meta.html.example) , or discard it from `base.html` while implementing up the `{title}` tag again.
 
 <br>
 

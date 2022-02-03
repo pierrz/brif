@@ -1,0 +1,63 @@
+version: "3.9"
+
+x-papel-common:
+  &papel-common
+  environment:
+    &papel-common-env
+    BASE_URL: "${BASE_URL}"
+    APP_SUBDOMAIN: "${APP_SUBDOMAIN}"
+    APP_PORT: "${APP_PORT}"
+    SECRET_KEY: "${SECRET_KEY}"
+    CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
+    CELERY_RESULT_BACKEND: "${CELERY_RESULT_BACKEND}"
+    DB_NAME: "${DB_NAME}"
+    DB_USER: "${DB_USER}"
+    DB_PASSWORD: "${DB_PASSWORD}"
+  volumes:
+    - ./data/to-mount:/opt/data
+
+services:
+
+  nginx:
+    volumes:
+      - ./setup/nginx/app_docker.conf:/etc/nginx/sites-enabled/app_docker.conf:ro
+    depends_on:
+      - api_prod
+    profiles:
+      - live_prod
+
+  api_test:
+    <<: *papel-common
+    container_name: papel_api_test
+    image: api_img
+    build:
+      context: .
+      dockerfile: setup/app/Dockerfile
+    command: pytest -v
+    depends_on:
+      - db
+      - celery
+
+  api_prod:
+    <<: *papel-common
+    container_name: papel_api_prod
+    image: api_img
+    command: uvicorn main:app --host 0.0.0.0 --reload
+    depends_on:
+      - api_test
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+
+  celery:
+    container_name: papel_celery
+    build:
+      context: .
+      dockerfile: setup/celery/Dockerfile
+    image: celery_app_img
+    volumes:
+      - ./logs/celery:/opt/celery_app/logs
+    environment:
+      # TODO: exclude app related variables
+      <<: *papel-common-env
+    depends_on:
+      - rabbitmq

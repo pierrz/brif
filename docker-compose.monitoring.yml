@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+
+  nginx:
+    volumes:
+      - ./setup/nginx/monitor_docker.conf:/etc/nginx/sites-enabled/monitor_docker.conf:ro
+    depends_on:
+      - pgadmin
+    profiles:
+      - live_prod
+
+  flower:
+    container_name: papel_flower
+    image: mher/flower:latest
+    command: ["celery", "--broker=${CELERY_BROKER_URL}", "flower"]
+    environment:
+      CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
+      CELERY_RESULT_BACKEND: "${CELERY_RESULT_BACKEND}"
+    ports:
+      - "49555:5555"
+    depends_on:
+      - celery
+
+  pgadmin:
+    container_name: papel_pgadmin
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD}"
+    volumes:
+      - ./setup/pgadmin/servers.json:/pgadmin4/servers.json
+    depends_on:
+      - db
+    ports:
+      - "5050:80"

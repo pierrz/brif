@@ -1,0 +1,37 @@
+# based on https://www.getcodeflow.com/pylint-configuration.html
+
+[MASTER]
+# 4 threads for 2 cores, change at will
+jobs=4
+fail-under=8.0
+disable= import-error   # fix import errors when using the dev environment
+# some troublesome files to exclude, to avoid 'maximum recursion depth exceeded' errors
+ignore=
+    .venv,
+    venv,
+    .git,
+    __pycache__,
+    logs,
+    setup
+
+[REPORTS]
+reports=yes
+score=yes
+evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+output-format=text
+msg-template={path}:{line}:{column}: {msg_id}: {msg} ({symbol})
+
+[MESSAGES CONTROL]
+# avoid too long reports (even after formatting with yapf)
+disable=line-too-long
+
+[FORMAT]
+# pep8
+max-line-length=79
+
+[REFACTORING]
+max-nested-blocks=5
+
+[DESIGN]
+max-args=5
+max-attributes=7

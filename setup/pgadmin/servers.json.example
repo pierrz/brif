@@ -1,0 +1,12 @@
+{"Servers": {
+        "1": {
+            "Name": "Papel",
+            "Group": "Docker",
+            "Port": portnumber,
+            "Username": "<username>",
+            "Host": "papel_postgres",
+            "SSLMode": "prefer",
+            "MaintenanceDB": "<dbname>"
+        }
+}
+}

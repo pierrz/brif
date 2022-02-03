@@ -1,0 +1,45 @@
+version: "3.9"
+
+volumes:
+  papel_db:
+    name: papel_db
+
+services:
+
+  nginx:
+    image: nginx
+    container_name: papel_nginx
+    volumes:
+      - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
+      - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
+      - ./logs/nginx:/var/log/nginx
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    profiles:
+      - live_prod
+
+  db:
+    container_name: papel_postgres
+    build:
+      context: .
+      dockerfile: setup/postgres/Dockerfile
+    restart: always
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      DB_NAME: "${DB_NAME}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - papel_db:/var/lib/postgresql/data
+
+  rabbitmq:
+    container_name: papel_rabbitmq
+    image: rabbitmq:3.8-management
+    restart: on-failure
+    ports:
+      - "5672:5672"
+      - "15672:15672"

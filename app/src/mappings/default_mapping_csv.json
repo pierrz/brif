@@ -1,0 +1,10 @@
+{
+  "uri": "dc:identifier",
+  "thumb_uri": "dc:relation_thumb",
+  "image_uri": "dc:relation",
+  "label": "dc:title",
+  "description": "dc:description",
+  "date": "dcterms:created",
+  "license": "dc:rights",
+  "provider": "dc:publisher"
+}

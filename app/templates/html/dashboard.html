@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <section id="dashboard" class="section">
+
+    <nav class="level">
+      <div class="level-item has-text-centered" style="display: block;">
+        <h3 class="heading is-spaced">brif demo</h3>
+        <h1 class="title is-spaced">Dashboard</h1>
+      </div>
+    </nav>
+
+    <table class="table table-striped dset-table" aria-describedby="results table for all the datasets jobs">
+      <thead>
+          <tr>
+          <th scope="col">Dataset</th>
+          <th scope="col">Mapping</th>
+          <th scope="col">Input items</th>
+          <th scope="col">Transformed manifests</th>
+          <th scope="col">Images</th>
+          <th scope="col" class="lg-col">Presentation API</th>
+          <th scope="col">Image API</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="lg-col">Actions</th>
+          </tr>
+      </thead>
+
+      <tbody>
+          {% for el in data %}
+          <tr>
+              <td>{{ el.fullname }}</td>
+              <th scope="row"><a href="/iiif/pres/{{ el.dir_name }}/mapping">{{ el.mapping }}</a></th>
+              <th scope="row">
+                  {% if el.total is not none %} {{ el.total }} {% endif %}
+              </th>
+              <th scope="row">
+                  {% if el.valid is not none %} {{ el.valid }} {% endif %}
+              </th>
+              <th scope="row">
+                  {% if el.valid_img is not none %} {{ el.valid_img }} {% endif %}
+              </th>
+              {% if el.status == 'processed' %}
+              <th scope="row">
+                    <a href="/iiif/pres/{{ el.dir_name }}/collection/collection_manifest.json">collection</a>
+                    &nbsp;|&nbsp;sample:&nbsp;
+                    [&nbsp;<a href="/iiif/pres/{{ el.dir_name }}/manifest_api_example">data</a>
+                    &nbsp;/&nbsp;<a href="/iiif/pres/{{ el.dir_name }}/manifest_api_example_view">view</a>&nbsp;]
+              </th>
+              <th scope="row">
+                    <a href="/iiif/pres/{{ el.dir_name }}/image_api_example">image sample</a>
+              </th>
+              {% else %}
+              <th scope="row"></th>
+              <th scope="row"></th>
+              {% endif %}
+              <th scope="row">
+                  {% if el.status == "in progress" %}
+                        -- {{ el.status }} --
+                  {% else %}
+                        {{ el.status }}
+                  {% endif %}
+              </th>
+              <th scope="row">
+
+                  {% if el.status != "processed" %}
+                      {% if el.status == "unprocessed" %}
+                      <a href="/task/process_dataset/{{ el.fullname }}">
+                          <span class="tooltip-min has-tooltip-arrow has-tooltip-bottom" data-tooltip="transform">
+                              <span class="material-icons">auto_fix_high</span>
+                          </span>
+                      </a>
+
+                      {% elif el.status == "in progress" %}
+                      <a class="disabled" href="#">
+                          <span class="tooltip-min has-tooltip-arrow has-tooltip-bottom" data-tooltip="refresh the page">
+                              <span class="material-icons">cached</span>
+                          </span>
+                      </a>
+                      {% endif %}
+
+                      <a class="disabled" href="#">
+                          <span class="material-icons">delete_forever</span>
+                      </a>
+
+                  {% else %}
+                      <a class="disabled" href="#">
+                          <span class="material-icons">auto_fix_high</span>
+                      </a>
+
+                      <a href="/task/delete_dataset/{{ el.fullname }}">
+                          <span class="tooltip-min has-tooltip-arrow has-tooltip-bottom" data-tooltip="delete">
+                              <span class="material-icons">delete_forever</span>
+                          </span>
+                      </a>
+
+                  {% endif %}
+
+              </th>
+          </tr>
+          {% endfor %}
+      </tbody>
+    </table>
+
+  </section>
+{% endblock %}

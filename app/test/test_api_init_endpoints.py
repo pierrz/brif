@@ -2,8 +2,11 @@
 Core test module with a dedicated test base class
 """
 
-from test.test_base import EndpointTestBase
+from test.test_base import (EndpointCantaloupeTest, EndpointPipelineTest,
+                            EndpointTestBase)
 
+import pytest
+from config import app_config
 from fastapi.testclient import TestClient
 from src.db.database import close_db_connection, init_db_connection
 
@@ -41,10 +44,25 @@ def test_endpoint_check_read_db(client: TestClient):
     close_db_connection(cur, conn)
 
 
-def test_endpoint_check_celery(client: TestClient):
+@pytest.mark.skipif(
+    not app_config.LOCAL_DEV,
+    reason="skipped in prod (erratic issue when connecting to Cantaloupe)",
+)
+def test_endpoint_check_cantaloupe(client: TestClient):
     """
-    Test if Celery is connected and can run a data pipeline
+    Test if Cantaloupe is connected and returns the expect data.
+    Skipped in prod due to an erratic issue when connecting to Cantaloupe (sometimes passes, sometimes not).
+    Not critical as the connection with Cantaloupe is tested in 'test_endpoint_check_iiif_pipeline'
     :param client: current FastAPI test client
     :return: does its thing
     """
-    EndpointTestBase(client, "check_celery")
+    EndpointCantaloupeTest(client)
+
+
+def test_endpoint_check_iiif_pipeline(client: TestClient):
+    """
+    Test the core pipeline features by triggering a Celery chain and check the transformed file
+    :param client: current FastAPI test client
+    :return: does its thing
+    """
+    EndpointPipelineTest(client)

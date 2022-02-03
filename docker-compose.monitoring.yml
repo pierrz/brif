@@ -11,7 +11,7 @@ services:
       - live_prod
 
   flower:
-    container_name: papel_flower
+    container_name: brif_flower
     image: mher/flower:latest
     command: ["celery", "--broker=${CELERY_BROKER_URL}", "flower"]
     environment:
@@ -23,7 +23,7 @@ services:
       - celery
 
   pgadmin:
-    container_name: papel_pgadmin
+    container_name: brif_pgadmin
     image: dpage/pgadmin4:latest
     restart: always
     environment:

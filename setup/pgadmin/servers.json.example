@@ -1,10 +1,10 @@
 {"Servers": {
         "1": {
-            "Name": "Papel",
+            "Name": "Brif",
             "Group": "Docker",
             "Port": portnumber,
             "Username": "<username>",
-            "Host": "papel_postgres",
+            "Host": "brif_postgres",
             "SSLMode": "prefer",
             "MaintenanceDB": "<dbname>"
         }

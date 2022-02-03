@@ -1,18 +1,37 @@
 """
 All endpoints used for testing purpose. Not included in the documentation
 """
+import shutil
+from pathlib import Path
 
+from config import app_config
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from src.db.database import close_db_connection  # , delete_row
-from src.db.database import init_db_connection
-from src.tasks.test_tasks import check_db_task, dummy_task
+from src.db.database import close_db_connection, delete_row, init_db_connection
+from src.libs.main_lib import fetch_json_from_url, load_json
+from src.libs.router_lib import init_iiif_pipeline_lite
 
 router = APIRouter(
     prefix="/test",
     tags=["test"],
     responses={404: {"description": "Issue with endpoint"}},
 )
+
+
+@router.get("/check_cantaloupe", include_in_schema=False)
+async def check_cantaloupe() -> JSONResponse:
+    """
+    Checks whether Cantaloupe is up and returning the expected JSON manifest
+    :return: a JSON manifest
+    """
+
+    # TODO: use the the live url and not the container route
+    # url = f"{app_config.API_IIIF_IMAGE_PUBLIC}test_dataset%2FN9354201/info.json"
+    url = (
+        f"{app_config.API_IIIF_IMAGE}test_dataset%2FN9354201/info.json"  # docker route
+    )
+    json_data = fetch_json_from_url(url)
+    return JSONResponse(json_data)
 
 
 @router.get("/api_live", include_in_schema=False)
@@ -53,14 +72,31 @@ async def read_db() -> JSONResponse:
     return JSONResponse({"response_db": data})
 
 
-@router.get("/check_celery", include_in_schema=False)
-async def check_celery() -> JSONResponse:
+@router.get("/check_iiif_pipeline", include_in_schema=False)
+async def check_iiif_pipeline() -> JSONResponse:
     """
-    Starts a dummy celery pipeline and retrieves the result from the DB
-    :return: the retrieved data as a response
+    Starts a transformation pipeline and retrieves the transformed file
+    :return: either an error or the transformed JSON manifest
     """
-    chain = dummy_task.s(3) | check_db_task.s()
-    result = chain()
-    task_result = result.get()
+    print("start test pipeline ...")
+    dataset_dir = "test_dataset"
+    dataset_name = "test_records.csv"
+    pipeline = init_iiif_pipeline_lite(dataset_dir, dataset_name)
 
-    return JSONResponse({"result": task_result})
+    check = pipeline.ready()
+    while check is False:
+        check = pipeline.ready()
+
+    test_filepath = Path(
+        app_config.DATA_DIR,
+        "output/test_dataset/manifest/kokoelmat_fng_fi_app_si_A_V_4460/manifest.json",
+    )
+    if test_filepath.exists():
+        data = load_json(test_filepath)
+        # remove transformed data & clean db
+        delete_row(f"{dataset_dir}/{dataset_name}")
+        shutil.rmtree(Path(app_config.DATA_DIR, "output", dataset_dir))
+        print("Pipeline job succeeded.")
+        return JSONResponse(data)
+
+    return JSONResponse({"response": "error with the pipeline ..."})

@@ -1,16 +1,16 @@
 upstream flower_server { # bind to flower container
-    server papel_flower:5555 fail_timeout=0;
+    server brif_flower:5555 fail_timeout=0;
 }
 
 
 upstream pgadmin_server { # bind to pgadmin container
-    server papel_pgadmin:80 fail_timeout=0;
+    server brif_pgadmin:80 fail_timeout=0;
 }
 
 
 server { # flower server
 
-    server_name subdomain-one.example.com; # managed by Certbot
+    server_name flower.example.com; # managed by Certbot
     client_max_body_size 4G;
     keepalive_timeout 5;
     add_header 'Content-Security-Policy' 'upgrade-insecure-requests';
@@ -34,7 +34,7 @@ server { # flower server
 
 server { # pgadmin server
 
-    server_name subdomain-two.example.com; # managed by Certbot
+    server_name pgadmin.example.com; # managed by Certbot
     client_max_body_size 4G;
     keepalive_timeout 5;
     add_header 'Content-Security-Policy' 'upgrade-insecure-requests';
@@ -57,22 +57,22 @@ server { # pgadmin server
 
 
 server {
-    if ($host = subdomain-one.example.com) {
+    if ($host = flower.example.com) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
-    server_name subdomain-one.example.com;
+    server_name flower.example.com;
     listen 80;
     return 404; # managed by Certbot
 }
 
 
 server {
-    if ($host = subdomain-two.example.com) {
+    if ($host = pgadmin.example.com) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
-    server_name subdomain-two.example.com;
+    server_name pgadmin.example.com;
     listen 80;
     return 404; # managed by Certbot
 }

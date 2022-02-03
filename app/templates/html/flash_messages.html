@@ -1,0 +1,22 @@
+<ul class="messages">
+{% for message in get_messages() %}
+    <article class="message message-{{ message.category }} is-success flash">
+      <button id="flash-message" class="delete" aria-label="delete"></button>
+      <div class="message-body">
+          <strong>{{ message.message }}</strong>
+      </div>
+  </article>
+{% endfor %}
+</ul>
+
+<script>
+    // close message UI
+    if (document.getElementById( 'flash-message' )) {
+
+        var closeButton = document.getElementById( 'flash-message' ),
+        message = closeButton.parentElement;
+        closeButton.onclick = function() {
+            message.style.display = 'none';
+            }
+    };
+</script>

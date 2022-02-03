@@ -1,14 +1,14 @@
 version: "3.9"
 
 volumes:
-  papel_db:
-    name: papel_db
+  brif_db:
+    name: brif_db
 
 services:
 
   nginx:
     image: nginx
-    container_name: papel_nginx
+    container_name: brif_nginx
     volumes:
       - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
       - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
@@ -21,7 +21,7 @@ services:
       - live_prod
 
   db:
-    container_name: papel_postgres
+    container_name: brif_postgres
     build:
       context: .
       dockerfile: setup/postgres/Dockerfile
@@ -34,10 +34,10 @@ services:
       DB_USER: "${DB_USER}"
       DB_PASSWORD: "${DB_PASSWORD}"
     volumes:
-      - papel_db:/var/lib/postgresql/data
+      - brif_db:/var/lib/postgresql/data
 
   rabbitmq:
-    container_name: papel_rabbitmq
+    container_name: brif_rabbitmq
     image: rabbitmq:3.8-management
     restart: on-failure
     ports:

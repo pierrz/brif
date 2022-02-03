@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+        {% include "head_meta.html" %}
+        <link href="{{url_for('static', path='/tify/tify.css')}}" rel="stylesheet" media="screen">
+  </head>
+
+  <body>
+  <section class="section">
+        <div id="viewer"></div>
+        <script>
+            url = window.location.href.replace("/view", "") + "/manifest.json"
+            tifyOptions = {
+                container: "#viewer",
+                immediateRender: false,
+                init: true,
+                language: "en",
+                manifest: url,
+                stylesheet: null,
+                title: null,
+            }
+        </script>
+  </section>
+  <script src="{{url_for('static', path='/tify/tify.js')}}"></script>
+  </body>
+
+</html>

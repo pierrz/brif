@@ -128,16 +128,24 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# macOs & PyCharm
+# macOs & PyCharm & dev
 .DS_Store
 .idea/
-
-# repo specific
 .sonar-scanner.properties
 .scannerwork
+
+# repo specific (logs, env, nginx confs, muz source)
 logs
 setup/rabbitmq/definitions.json
 setup/pgadmin/servers.json
+setup/nginx/*_docker.conf
 setup/nginx/certificate.conf
-setup/nginx/app_docker.conf
-setup/nginx/monitor_docker.conf
+muz_app
+head_meta.html
+favicon/
+cantaloupe.properties
+
+# including only test dataset
+data/output
+data/input/*
+!data/input/test_dataset

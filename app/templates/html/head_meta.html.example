@@ -1,0 +1,14 @@
+<!-- HEAD MAIN -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>{{ title }}</title>
+<meta name="description" content=" what is it used for ">
+<meta name="author" content=" who you are ">
+<link rel="icon" href="{{ url_for('static', path='/favicon/favicon.ico') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='/favicon/apple-touch-icon.png') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/favicon/favicon-32x32.png') }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/favicon/favicon-16x16.png') }}">
+<link rel="manifest" href="{{ url_for('static', path='/favicon/site.webmanifest') }}">
+<link rel="mask-icon" href="{{ url_for('static', path='/favicon/safari-pinned-tab.svg') }}" color="red">
+<meta name="msapplication-TileColor" content="blue">
+<meta name="theme-color" content="red">

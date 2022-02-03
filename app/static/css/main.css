@@ -1,60 +1,88 @@
-/* Material design icons */
-@font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: url(https://example.com/MaterialIcons-Regular.eot); /* For IE6-8 */
-  src: local('Material Icons'),
-    local('MaterialIcons-Regular'),
-    url(https://example.com/MaterialIcons-Regular.woff2) format('woff2'),
-    url(https://example.com/MaterialIcons-Regular.woff) format('woff'),
-    url(https://example.com/MaterialIcons-Regular.ttf) format('truetype');
-}
-
-.material-icons {
-  font-family: 'Material Icons';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;  /* Preferred icon size */
-  display: inline-block;
-  line-height: 1;
-  text-transform: none;
-  letter-spacing: normal;
-  word-wrap: normal;
-  white-space: nowrap;
-  direction: ltr;
-
-  /* Support for all WebKit browsers. */
-  -webkit-font-smoothing: antialiased;
-  /* Support for Safari and Chrome. */
-  text-rendering: optimizeLegibility;
-
-  /* Support for Firefox. */
-  -moz-osx-font-smoothing: grayscale;
-
-  /* Support for IE. */
-  font-feature-settings: 'liga';
-}
-
-
-/* custom css */
 html {
   position: relative;
   min-height: 100%;
 }
 body {
-  padding-top: 2rem;
   margin-bottom: 60px;
+}
+
+section#dashboard {
+    position: absolute;
+    top: 4rem;
+    width: 80%;
+    margin-left: 10%;
+}
+
+.flash button.delete {
+    position: absolute;
+    right: 0;
+    margin: 1.3rem 1.7rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+}
+
+a#back-link {
+  position: absolute;
+  left: 3rem;
+  top: 6rem;
+  color: grey;
+  opacity: .4;
+}
+a#back-link:hover {
+  opacity: .8;
+}
+a#back-link span.material-icons {
+  font-size: 2rem;
+}
+
+table a.disabled {
+  color: grey;
+}
+table a.disabled span.material-icons {
+  opacity: .7;
+}
+table a.disabled:hover,
+table a.disabled span.tooltip-min:hover,
+table a.disabled span.material-icons:hover {
+  cursor: default;
 }
 
 table {
     margin: auto
 }
+tbody th {
+    font-weight: 400
+}
+span.tooltip-min[data-tooltip] {
+    border-bottom: none;
+}
 
-/*.footer {
+.footer {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 50px;
-  line-height: 50px;
-}*/
+  padding: 2rem;
+}
+.footer nav {
+  width: 25%;
+  margin: auto;
+}
+
+.icon-img {
+  opacity: .4;
+}
+.icon-img:hover {
+  opacity: .8;
+}
+
+a#back-link,
+a#back-link:hover,
+table a.disabled span.material-icons,
+table a.disabled span.material-icons:hover,
+table a.disabled,
+table a.disabled:hover,
+.icon-img,
+.icon-img:hover {
+    transition: all 0.3s;
+    -webkit-transition: all 0.3s;
+}

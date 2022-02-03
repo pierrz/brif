@@ -9,13 +9,26 @@ ENV PYTHONFAULTHANDLER=1 \
 
 RUN pip install poetry
 
-# Copy only requirements to cache them in docker layer
 WORKDIR /opt/app
+
+# install npm dependencies
+RUN apt update \
+    && apt install -y npm \
+    && cd /tmp \
+    && npm install tify bulma @creativebulma/bulma-tooltip
+
+# Copy only requirements to cache them in docker layer
 COPY ./app/pyproject.toml ./app/poetry.lock* ./
 
 # Project initialization:
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+    && poetry install --no-interaction --no-ansi --no-dev
 
 # Creating folders and files for the project:
 COPY ./app ./
+
+# Copy vue, tify and bulma
+RUN cd /tmp/node_modules \
+    && cp bulma/css/bulma.min.css /opt/app/static/css \
+    && cp -r tify/dist /opt/app/static/tify \
+    && cp \@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css /opt/app/static/css

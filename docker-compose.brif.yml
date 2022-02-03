@@ -1,0 +1,81 @@
+version: "3.9"
+
+# TODO: improve how to share that with celery
+x-brif-common:
+  &brif-common
+  environment:
+    &brif-common-env
+    BASE_URL: "${BASE_URL}"
+    APP_SUBDOMAIN: "${APP_SUBDOMAIN}"
+    APP_PORT: "${APP_PORT}"
+    SECRET_KEY: "${SECRET_KEY}"
+    CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
+    CELERY_RESULT_BACKEND: "${CELERY_RESULT_BACKEND}"
+    DB_NAME: "${DB_NAME}"
+    DB_USER: "${DB_USER}"
+    DB_PASSWORD: "${DB_PASSWORD}"
+    CANTALOUPE_PORT: "${CANTALOUPE_PORT}"
+    API_IMAGE_BACKEND: "${API_IMAGE_BACKEND}"
+  volumes:
+    - /opt/data/brif_data:/opt/data   # to change to project's data location
+  links:
+    - "cantaloupe:http"
+
+services:
+
+  nginx:
+    volumes:
+      - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro
+    depends_on:
+      - api_prod
+    profiles:
+      - live_prod
+
+  api_test:
+    <<: *brif-common
+    container_name: brif_api_test
+    image: brif_api_img
+    build:
+      context: .
+      dockerfile: setup/app/Dockerfile
+    command: pytest -vv
+    depends_on:
+      - cantaloupe
+      - db
+      - celery
+
+  api_prod:
+    <<: *brif-common
+    container_name: brif_api_prod
+    image: brif_api_img
+    command: uvicorn main:app --host 0.0.0.0 --reload
+    depends_on:
+      - api_test
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+
+  cantaloupe:
+    container_name: brif_cantaloupe
+    build:
+      context: .
+      dockerfile: setup/cantaloupe/Dockerfile
+    image: brif_cantaloupe
+    restart: always
+    volumes:
+      - ./logs/cantaloupe:/cantaloupe/logs
+    ports:
+      - "${CANTALOUPE_PORT}"
+
+  celery:
+    container_name: brif_celery
+    build:
+      context: .
+      dockerfile: setup/celery/Dockerfile
+    image: celery_app_img
+    volumes:
+      - ./logs/celery:/opt/celery_app/logs
+      - /opt/data/brif_data:/opt/data   # to change to project's data location
+    environment:
+      <<: *brif-common-env
+    depends_on:
+      - rabbitmq

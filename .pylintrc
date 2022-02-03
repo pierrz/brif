@@ -4,7 +4,9 @@
 # 4 threads for 2 cores, change at will
 jobs=4
 fail-under=8.0
-disable= import-error   # fix import errors when using the dev environment
+disable=
+    import-error,   # fix import errors when using the dev environment
+    missing-function-docstring
 # some troublesome files to exclude, to avoid 'maximum recursion depth exceeded' errors
 ignore=
     .venv,
@@ -12,7 +14,9 @@ ignore=
     .git,
     __pycache__,
     logs,
-    setup
+    setup,
+    item_key_names.py,
+    parameters.py
 
 [REPORTS]
 reports=yes

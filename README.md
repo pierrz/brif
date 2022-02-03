@@ -8,6 +8,7 @@ Embedded with:
 - Celery + Rabbit-MQ + Flower
 - Postgres + PGAdmin
 - Nginx
+- Bulma
 
 IIIF features:
 - Cantaloupe image server <=> Image API 2.1
@@ -106,8 +107,14 @@ Each transformed dataset comes with a new `collection` dataset which gathers all
 
 <br>
 
-##### Docs & Dashboard UI
+##### Docs & Monitoring
 You can find the Swagger UI for the whole tool at the `/docs` url. Some endpoints are voluntarily not presented there, look for `include_in_schema=False` for the exclusions if necessary.
+
+The tool comes with optional monitoring services (Flower and PGAdmin) to monitor further your Postgres database and the tasks going through the pipeline.
+
+<br>
+
+##### Dashboard UI
 
 At startup, a dashboard is directly accessible at the url `/dashboard`
 - The dashboards is a basic UI to manage your datasets and check the transformed collections. 

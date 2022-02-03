@@ -14,10 +14,8 @@ IIIF features:
 
 <br>
 
-### Reference
-This repository is based on the [Papel](https://github.com/pierrz/papel) template repository designed to quickly deploy API based pipelines. 
-<br>
-The tiny dataset and 6 related images used as test material come from the Finnish National Gallery [Open Data platform](https://www.kansallisgalleria.fi/en/api-sovelluskehittajille).
+### Content
+The tiny dataset and 6 related images used in the demo are released as copyright-free materials, and come from the Finnish National Gallery [Open Data platform](https://www.kansallisgalleria.fi/en/api-sovelluskehittajille).
 
 ### Installation
 #### Backend

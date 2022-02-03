@@ -41,8 +41,7 @@ Then you're left with creating the `.env` environment file.
 <br>
 
 #### Cantaloupe
-Mount your images as volumes in the `cantaloupe` service and set `FilesystemSource.BasicLookupStrategy.path_prefix` in `cantaloupe.properties` accordingly to get things going.
-You will also have to implement this location in [cantaloupe.properties](setup/cantaloupe/cantaloupe.properties.example).
+Mount your images as volumes in the `cantaloupe` service and set `FilesystemSource.BasicLookupStrategy.path_prefix` in [cantaloupe.properties](setup/cantaloupe/cantaloupe.properties.example) accordingly to get things going.
 From there, you can easily set your logs, enable/disable different API version number (i.e. from to 3) as it follows the very [official documentation](https://cantaloupe-project.github.io/).
 
 <br>

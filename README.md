@@ -48,23 +48,28 @@ Mount your images as volumes in the `cantaloupe` service and set `FilesystemSour
 You will also have to implement this location in `./setup/cantaloupe/Dockerfile`.
 From there, you can easily set your logs, enable/disable different API version number (i.e. from to 3) as it follows the very [official documentation](https://cantaloupe-project.github.io/).
 
+<br>
 
 #### Frontend
 You can add your own `head_meta.html`, or discard it from `base.html` while implementing up the `{title}` tag again.
 
+<br>
 
 #### Data
-You just need to copy your datasets in `data/input`, and the dashboard should automatically pick them up.
+You just need to copy your datasets in `data/input`, and the dashboard should automatically pick them up. 
 
-Each directory can contain multiple datasets, and they will be treated separately.
+Or change accordingly in docker's [x-brif-common](docker-compose.brif.yml) 
 
-Each directory can contain one `mapping.json` file to implement a specific mapping for the data pipeline. If not present, a default mapping will be applied.
+Each directory can contain multiple datasets, and they will be treated separately. Each directory can have only 1 specific mapping.
 
+Each directory can contain one [mapping.json](app/src/mappings/default_mapping_csv.json) file to implement a specific mapping for the data pipeline. If not present, a default mapping will be applied.
 
-#### Run
+<br>
+
+### Run
 Only the core containers
 ```
-docker-compose docker-compose.yml up
+docker-compose docker-compose.core.yml up
 ```
 
 \+ monitoring containers
@@ -77,7 +82,7 @@ docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up
 docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml up
 ```
 
-\+ only live containers (tagged with 'prod_live' profile)
+\+ with Nginx containers (tagged with 'prod_live' profile)
 ```
 docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml --profile live_prod up
 ```
@@ -89,23 +94,39 @@ Docker is great but sometimes tricky ... when changes are made, don't forget to:
 
 <br>
 
-#### Results
-Once processed, all manifests can be accessed with their based URI followed by `/manifest.json` to access the data or either `/view` for the Tify viewer.
-Each processed dataset also gets a collection manifest gathering all its manifests URIs.
+### Manual
+
+##### Instructions
+
+This tool is not meant to search within the collection, only to transform the raw data into valid IIIF manifests.
+
+To browse further the collection you will probably need to import the transformed data into a search engine such as Elasticsearch or Solr.
+
+Each transformed dataset comes with a new `collection` dataset which gathers all the transformed IIIF manifests URLs, thus making it easy to import the related data within your system.
 
 <br>
 
-#### Development
+##### Docs & Dashboard UI
+You can find the Swagger UI for the whole tool at the `/docs` url. Some endpoints are voluntarily not presented there, look for `include_in_schema=False` for the exclusions if necessary.
+
+At startup, a dashboard is directly accessible at the url `/dashboard`
+- The dashboards is a basic UI to manage your datasets and check the transformed collections. 
+- It shows some stats, along with sample links.
+
+The workflow is relatively simple:
+- The whole dataset is itemised.
+- A dedicated IIIF Image API is spinned up based on the provided images.
+- Each new item/record is transformed into a IIIF manifest.
+- A new collection dataset is created which gathers all the IIIF manifests urls.
+
+Once processed, all manifests can be accessed with their base URI followed by `/manifest.json` to access the data or either `/view` for the Tify viewer.
+
+<br>
+
+### Development
 If you want to make some changes in this repo while following the same environment tooling.
 ```
 poetry config virtualenvs.in-project true
 poetry install && poetry shell
 pre-commit install
 ```
-
-
-## DRAFT
-
-locally: data/input folder
-local param / volumes
-data workflow explanations

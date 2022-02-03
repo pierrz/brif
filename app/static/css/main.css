@@ -9,8 +9,9 @@ body {
 section#dashboard {
     position: absolute;
     top: 4rem;
-    width: 80%;
-    margin-left: 10%;
+    width: 94%;
+    margin-left: 3%;
+    font-size: .9rem;
 }
 
 .flash button.delete {

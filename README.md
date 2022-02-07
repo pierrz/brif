@@ -1,11 +1,10 @@
 # brif
-<br>
 
 A boilerplate tool based on Docker, designed to streamline the development and deployment of IIIF compliant platforms.
 
 Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Nginx, Bulma`.
 
-IIIF features:
+####IIIF features:
 - Cantaloupe image server <=> Image API 2.1
 - FastAPI implementation <=> Presentation API 2.1
 - Automated manifest creation from CSV files
@@ -14,8 +13,13 @@ IIIF features:
 
 <br>
 
-### Content
+---
+
+
+### Creative material
 The tiny dataset and 6 related images used in the demo are released as copyright-free materials, and come from the Finnish National Gallery [Open Data platform](https://www.kansallisgalleria.fi/en/api-sovelluskehittajille).
+
+<br>
 
 ### Installation
 #### Backend
@@ -25,7 +29,7 @@ Fetch all the Git LFS resources: `git lfs fetch --all && git lfs pull`
 
 You might have to tweak the `volumes` of the `brif_nginx` service to import your own certificate provider directory.
 
-You have to create the required `nginx` [configuration files](setup/nginx):
+for a live deployment, you might have to create the required `nginx` [configuration files](setup/nginx):
 - `certificate.json`
 - `app_docker.conf`
 - `monitor_docker.conf`

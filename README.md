@@ -80,7 +80,7 @@ docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up
 docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml up
 ```
 
-\+ with Nginx containers (tagged with 'prod_live' profile)
+\+ with Nginx containers (tagged with the "live_prod" profile)
 ```
 docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml --profile live_prod up
 ```

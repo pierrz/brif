@@ -4,7 +4,7 @@ A boilerplate tool based on Docker, designed to streamline the development and d
 
 Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Nginx, Bulma`.
 
-####IIIF features:
+#### IIIF features:
 - Cantaloupe image server <=> Image API 2.1
 - FastAPI implementation <=> Presentation API 2.1
 - Automated manifest creation from CSV files

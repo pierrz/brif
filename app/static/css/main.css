@@ -28,6 +28,7 @@ a#back-link {
   top: 6rem;
   color: grey;
   opacity: .4;
+  z-index: 2000;
 }
 a#back-link:hover {
   opacity: .8;

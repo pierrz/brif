@@ -23,7 +23,7 @@ async def delete_dataset(request: Request, dataset_dir, dataset_name):
     message(
         request, f"Transformed data was deleted for the dataset '{fullname}'", "success"
     )
-    return RedirectResponse("/dashboard")
+    return RedirectResponse("/demo")
 
 
 @router.get("/process_dataset/{dataset_dir}/{dataset_name}")
@@ -40,4 +40,4 @@ async def process_dataset(request: Request, dataset_dir, dataset_name):
         f"Dataset '{dataset_dir}/{dataset_name}' is getting processed ...",
         "success",
     )
-    return RedirectResponse("/dashboard")
+    return RedirectResponse("/demo")

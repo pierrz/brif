@@ -62,6 +62,7 @@ services:
     image: brif_cantaloupe
     restart: always
     volumes:
+      - /mnt/potential/path/your/images:/mnt/some/path
       - ./logs/cantaloupe:/cantaloupe/logs
     ports:
       - "${CANTALOUPE_PORT}"

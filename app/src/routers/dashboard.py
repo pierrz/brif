@@ -54,7 +54,7 @@ def sync_datasets_with_db(input_dataset_names, input_data):
             load_input_dataset(dataset)
 
 
-@router.get("/dashboard", include_in_schema=False)
+@router.get("/demo", include_in_schema=False)
 async def dashboard(request: Request):
 
     input_dir = Path(app_config.DATA_DIR, "input")

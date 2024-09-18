@@ -4,12 +4,35 @@ A boilerplate tool based on Docker, designed to streamline the development and d
 
 Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Nginx, Bulma`.
 
-#### IIIF features:
+**NB:** _This tool is not actively maintained annd you might encounter some issues during the `docker compose build` phase. 
+Overall, it's mostly a matter of dependencies to update and some `Dockerfiles` to refine._
+
+### IIIF features:
 - Cantaloupe image server <=> Image API 2.1
 - FastAPI implementation <=> Presentation API 2.1
 - Automated manifest creation from CSV files
 - IIIF manifests creation based on [Prezi](https://github.com/iiif-prezi/iiif-prezi)
 - [Tify viewer](https://github.com/tify-iiif-viewer/tify) directly embedded with each manifest
+
+<br>
+
+---
+
+### Table of Contents
+- [Creative material](#creative-material)
+- [Installation](#installation)
+    - [Backend](#backend)
+    - [Cantaloupe](#cantaloupe)
+    - [Frontend](#frontend)
+    - [Data](#data)
+- [Test](#test)
+- [Run](#run)
+- [Manual](#manual)
+  - [Notes](#notes)
+  - [Data and images sample](#data-and-images-sample)
+  - [Docs & Monitoring](#docs--monitoring)
+  - [Dashboard UI](#dashboard-ui)
+- [Development](#development)
 
 <br>
 
@@ -25,9 +48,9 @@ The tiny dataset and 6 related images used in the demo are released as copyright
 #### Backend
 You should use the `main` branch, other branches being used for development purpose.
 
-Fetch all the Git LFS resources: `git lfs fetch --all && git lfs pull`
+Fetch all the Git LFS resources: `git lfs install && git lfs fetch --all && git lfs pull`
 
-You might have to tweak the `volumes` of the `brif_nginx` service to import your own certificate provider directory.
+You might have to tweak the `volumes` of the `nginx` service to import your own certificate provider directory.
 
 for a live deployment, you might have to create the required `nginx` [configuration files](setup/nginx):
 - `certificate.json`
@@ -49,7 +72,10 @@ From there, you can easily set your logs, enable/disable different API version n
 <br>
 
 #### Frontend
-You can add your own  [head_meta.html](app/templates/html/head_meta.html.example) , or discard it from `base.html` while implementing up the `{title}` tag again.
+You can add your own [head_meta.html](app/templates/html/head_meta.html.example), or discard it from `base.html` while implementing up the `{title}` tag again.
+
+<!-- There is a template to use along your chosen analytics provider. 
+In our case it is [head_meta.html](app/templates/html/head_meta.html.example) -->
 
 <br>
 
@@ -64,25 +90,34 @@ Each directory can contain one [mapping.json](app/src/mappings/default_mapping_c
 
 <br>
 
-### Run
-Only the core containers
+### Test
+To check your installation, run the following command.
 ```
-docker-compose docker-compose.core.yml up
+docker-compose docker-compose.yml api_test up
+```
+
+**NB:** You will need to import the provided data and image samples for all the tests to pass. 
+See in [Section](#data-and-images-sample) for further details.
+
+### Run
+Only the main containers
+```
+docker-compose up
 ```
 
 \+ monitoring containers
 ```
-docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up
 ```
 
 \+ with Brif app (including test container)
 ```
-docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml up
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up
 ```
 
 \+ with Nginx containers (tagged with the "live_prod" profile)
 ```
-docker-compose -f docker-compose.core.yml -f docker-compose.monitoring.yml -f docker-compose.brif.yml --profile live_prod up
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml -f --profile live_prod up
 ```
 <br>
 
@@ -94,7 +129,7 @@ Docker is great but sometimes tricky ... when changes are made, don't forget to:
 
 ### Manual
 
-##### Instructions
+##### Notes
 
 This tool is not meant to search within the collection, only to transform the raw data into valid IIIF manifests.
 
@@ -103,6 +138,17 @@ To browse further the collection you will probably need to import the transforme
 Each transformed dataset comes with a new `collection` dataset which gathers all the transformed IIIF manifests URLs, thus making it easy to import the related data within your system.
 
 <br>
+
+##### Data and images sample
+To make it easier to test this tool in action, we included both data and image samples.
+
+You should import them in the locations you for chose these elements, 
+which can be set up via the paramenters `DATA_DIR` and `CONTENT_DIR` in the `.env` file.
+
+Find the files in the `setup` directory:
+- `setup/app/input_sample/test_dataset/test_records.csv`
+- `setup/cantaloupe/test_images.zip`
+
 
 ##### Docs & Monitoring
 You can find the Swagger UI for the whole tool at the `/docs` url. Some endpoints are voluntarily not presented there, look for `include_in_schema=False` for the exclusions if necessary.

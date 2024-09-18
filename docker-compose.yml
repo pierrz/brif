@@ -1,3 +1,7 @@
+# Main compose setup
+
+##############
+# ENV & VOLUMES
 x-brif-common:
   &brif-common
   environment:
@@ -18,15 +22,15 @@ x-brif-common:
   links:
     - "cantaloupe:http"
 
-services:
+volumes:
+  brif_postgres_db_v:
+    name: brif_postgres_db_v
 
-  nginx:
-    volumes:
-      - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro
-    depends_on:
-      - api_prod
-    profiles:
-      - live_prod
+
+services:
+  
+##############
+# API SERVICES
 
   api_test:
     <<: *brif-common
@@ -50,6 +54,9 @@ services:
       - api_test
     ports:
       - "${APP_PORT}:${APP_PORT}"
+
+#####################
+# SUPPORTING SERVICES
 
   cantaloupe:
     container_name: brif_cantaloupe
@@ -79,3 +86,51 @@ services:
       <<: *brif-common-env
     depends_on:
       - rabbitmq
+  
+  rabbitmq:
+    container_name: brif_rabbitmq
+    image: rabbitmq:3.8-management
+    restart: on-failure
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ${LOGS_DIR}/rabbitmq:/var/log/rabbitmq
+
+  db:
+    container_name: brif_postgres
+    build:
+      context: .
+      dockerfile: setup/postgres/Dockerfile
+    restart: always
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      DB_NAME: "${DB_NAME}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - brif_postgres_db_v:/var/lib/postgresql/data
+      - ${LOGS_DIR}/postgres:/var/log/postgresql
+
+###############
+# PROXY SERVICE
+
+  nginx:
+    image: nginx:1.21.6
+    container_name: brif_nginx
+    volumes:
+      - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro
+      - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
+      - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
+      - ${LOGS_DIR}/nginx:/var/log/nginx
+      # CERTIFICATES (requires the whole directory mounted)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api_prod
+    profiles:
+      - live_prod

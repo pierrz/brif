@@ -1,18 +1,17 @@
-version: "3.9"
-
 volumes:
-  brif_db:
-    name: brif_db
+  brif_postgres_db_v:
+    name: brif_postgres_db_v
 
 services:
 
   nginx:
-    image: nginx
+    image: nginx:1.21.6
     container_name: brif_nginx
     volumes:
       - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
       - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
-      - ./logs/nginx:/var/log/nginx
+      - ${LOGS_DIR}/nginx:/var/log/nginx
+      # CERTIFICATES (requires the whole directory mounted)
       - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "80:80"
@@ -34,7 +33,8 @@ services:
       DB_USER: "${DB_USER}"
       DB_PASSWORD: "${DB_PASSWORD}"
     volumes:
-      - brif_db:/var/lib/postgresql/data
+      - brif_postgres_db_v:/var/lib/postgresql/data
+      - ${LOGS_DIR}/postgres:/var/log/postgresql
 
   rabbitmq:
     container_name: brif_rabbitmq
@@ -43,3 +43,5 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    volumes:
+      - ${LOGS_DIR}/rabbitmq:/var/log/rabbitmq

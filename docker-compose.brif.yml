@@ -1,6 +1,3 @@
-version: "3.9"
-
-# TODO: improve how to share that with celery
 x-brif-common:
   &brif-common
   environment:
@@ -17,7 +14,7 @@ x-brif-common:
     CANTALOUPE_PORT: "${CANTALOUPE_PORT}"
     API_IMAGE_BACKEND: "${API_IMAGE_BACKEND}"
   volumes:
-    - /opt/data/brif_data:/opt/data   # to change to project's data location
+    - ${DATA_DIR}:/opt/data       # change to the project's data location
   links:
     - "cantaloupe:http"
 
@@ -56,26 +53,28 @@ services:
 
   cantaloupe:
     container_name: brif_cantaloupe
+    image: brif_cantaloupe
     build:
       context: .
       dockerfile: setup/cantaloupe/Dockerfile
-    image: brif_cantaloupe
     restart: always
     volumes:
-      - /mnt/potential/path/your/images:/mnt/some/path
-      - ./logs/cantaloupe:/cantaloupe/logs
+      - ${LOGS_DIR}/cantaloupe:/cantaloupe/logs
+      # CHANGE WITH CAUTION the next mount as it is tied to cantaloupe/properties
+      # via FilesystemSource.BasicLookupStrategy.path_prefix
+      - ${CONTENT_DIR}:/mnt/directories
     ports:
       - "${CANTALOUPE_PORT}"
 
   celery:
     container_name: brif_celery
+    image: celery_app_img
     build:
       context: .
       dockerfile: setup/celery/Dockerfile
-    image: celery_app_img
     volumes:
-      - ./logs/celery:/opt/celery_app/logs
-      - /opt/data/brif_data:/opt/data   # to change to project's data location
+      - ${LOGS_DIR}/celery:/opt/celery_app/logs
+      - ${DATA_DIR}:/opt/data       # change to the project's data location
     environment:
       <<: *brif-common-env
     depends_on:

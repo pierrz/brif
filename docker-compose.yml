@@ -118,7 +118,7 @@ services:
 # PROXY SERVICE
 
   nginx:
-    image: nginx:1.21.6
+    image: nginx:1.27.1
     container_name: brif_nginx
     volumes:
       - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro

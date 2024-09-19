@@ -25,9 +25,9 @@ RUN cd /tmp \
     && mv libjpeg-turbo-2.1.1 /opt/libjpeg-turbo/lib
 
 # load test images
-COPY ./setup/cantaloupe/test_images.zip .
-RUN mkdir -p /mnt/fres/dsets/directories \
-    && unzip test_images.zip -d /mnt/fres/dsets/directories
+# COPY ./setup/cantaloupe/test_images.zip .
+# RUN mkdir -p /mnt/fres/dsets/directories \
+#    && unzip test_images.zip -d /mnt/fres/dsets/directories
 
 # set & start cantaloupe
 COPY ./setup/cantaloupe/cantaloupe.properties /cantaloupe/cantaloupe.properties

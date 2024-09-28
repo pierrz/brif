@@ -114,23 +114,23 @@ services:
       - brif_postgres_db_v:/var/lib/postgresql/data
       - ${LOGS_DIR}/postgres:/var/log/postgresql
 
-###############
-# PROXY SERVICE
+# ###############
+# # PROXY SERVICE
 
-  nginx:
-    image: nginx:1.27.1
-    container_name: brif_nginx
-    volumes:
-      - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro
-      - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
-      - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
-      - ${LOGS_DIR}/nginx:/var/log/nginx
-      # CERTIFICATES (requires the whole directory mounted)
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - api_prod
-    profiles:
-      - live_prod
+#   nginx:
+#     image: nginx:1.27.1
+#     container_name: brif_nginx
+#     volumes:
+#       - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro
+#       - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
+#       - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
+#       - ${LOGS_DIR}/nginx:/var/log/nginx
+#       # CERTIFICATES (requires the whole directory mounted)
+#       - /etc/letsencrypt:/etc/letsencrypt:ro
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     depends_on:
+#       - api_prod
+#     profiles:
+#       - live_prod

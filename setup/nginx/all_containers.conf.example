@@ -1,0 +1,185 @@
+# For all the upstreams, replace 'this.docker.container.ip' accordingly
+upstream api_server {
+    server this.docker.container.ip:8000 fail_timeout=0;  # brif_api_prod
+}
+
+upstream image_server {
+    server this.docker.container.ip:8182 fail_timeout=0;  # brif_cantaloupe
+}
+
+upstream flower_server {
+    server this.docker.container.ip:5555 fail_timeout=0;  # brif_flower
+}
+
+upstream pgadmin_server {
+    server this.docker.container.ip:80 fail_timeout=0;  # brif_pgadmin
+}
+
+upstream website_server {
+    server this.docker.container.ip:5000 fail_timeout=0;  # muzai_website
+}
+
+upstream elastic_server {
+    server this.docker.container.ip:9200 fail_timeout=0;  # muzai_elastic
+}
+
+server {
+    server_name brif.example.com;
+    client_max_body_size 4G;
+    keepalive_timeout 5;
+    add_header "Content-Security-Policy" "upgrade-insecure-requests";
+    add_header "Access-Control-Allow-Origin" *;
+
+    access_log /var/log/nginx/brif.access.log combined;
+    error_log /var/log/nginx/brif.error.log warn;
+
+    location / {
+        try_files $uri @proxy_to_api;
+    }
+
+    location @proxy_to_api {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://api_server;
+    }
+
+    listen 443 ssl;
+    include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
+}
+
+server {
+    server_name cantaloupe.example.com;
+    client_max_body_size 4G;
+    keepalive_timeout 5;
+    
+    access_log /var/log/nginx/cantaloupe.access.log combined;
+    error_log /var/log/nginx/cantaloupe.error.log warn;
+
+    location / {
+       try_files $uri @proxy_to_img;
+    }
+    large_client_header_buffers 4 32k;
+
+    location @proxy_to_img {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_pass http://image_server;
+    }
+
+    listen 443 ssl;
+    include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
+}
+
+server {
+    server_name flower.example.com;
+    client_max_body_size 4G;
+    keepalive_timeout 5;
+    add_header 'Content-Security-Policy' 'upgrade-insecure-requests';
+    
+    access_log /var/log/nginx/flower.access.log combined;
+    error_log /var/log/nginx/flower.error.log warn;
+
+    location / {
+        try_files $uri @proxy_to_flower;
+    }
+
+    location @proxy_to_flower {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://flower_server;
+    }
+
+    listen 443 ssl;
+    include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
+}
+
+server {
+    server_name pgadmin.example.com;
+    client_max_body_size 4G;
+    keepalive_timeout 5;
+    add_header 'Content-Security-Policy' 'upgrade-insecure-requests';
+
+    access_log /var/log/nginx/pgadmin.access.log combined;
+    error_log /var/log/nginx/pgadmin.error.log warn;
+
+    location / {
+        try_files $uri @proxy_to_pgadmin;
+    }
+
+    location @proxy_to_pgadmin {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://pgadmin_server;
+    }
+
+    listen 443 ssl;
+    include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
+}
+
+server {
+    server_name example.com;
+    client_max_body_size 4G;
+    keepalive_timeout 5;
+    add_header 'Content-Security-Policy' 'upgrade-insecure-requests';
+    add_header "Access-Control-Allow-Origin" *;
+    
+    access_log /var/log/nginx/website.access.log combined;
+    error_log /var/log/nginx/website.error.log warn;
+
+    location / {
+        try_files $uri @proxy_to_website;
+    }
+
+    location @proxy_to_website {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://website_server;
+    }
+
+    listen 443 ssl;
+    include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
+}
+
+server {
+    server_name elastic.example.com;
+    client_max_body_size 50m;
+    
+    access_log /var/log/nginx/elastic.access.log combined;
+    error_log /var/log/nginx/elastic.error.log warn;
+
+    location / {
+       try_files $uri @proxy_to_elastic;
+    }
+    
+    large_client_header_buffers 4 32k;
+
+    location @proxy_to_elastic {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        add_header Access-Control-Allow-Origin *;
+        add_header Access-Control-Allow-Headers 'X-Requested-With, Content-Type';
+        add_header Access-Control-Allow-Credentials true;
+        proxy_redirect off;
+        proxy_pass http://elastic_server;
+    }
+
+    listen 443 ssl;
+    include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
+}
+
+# HTTP to HTTPS redirects
+server {
+    listen 80;
+    server_name brif.example.com cantaloupe.example.com flower.example.com pgadmin.example.com example.com elastic.example.com;
+    return 301 https://$host$request_uri;
+}

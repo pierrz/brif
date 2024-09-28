@@ -2,7 +2,8 @@
 
 A boilerplate tool based on Docker, designed to streamline the development and deployment of IIIF compliant platforms.
 
-Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Nginx, Bulma`.
+Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Bulma`
+and provided with an example configuration for `Nginx`.
 
 **NB:** _This tool is not actively maintained annd you might encounter some issues during the `docker compose build` phase. 
 Overall, it's mostly a matter of dependencies to update and some `Dockerfiles` to refine._
@@ -50,12 +51,9 @@ You should use the `main` branch, other branches being used for development purp
 
 Fetch all the Git LFS resources: `git lfs install && git lfs fetch --all && git lfs pull`
 
-You might have to tweak the `volumes` of the `nginx` service to import your own certificate provider directory.
-
-for a live deployment, you might have to create the required `nginx` [configuration files](setup/nginx):
-- `certificate.json`
-- `app_docker.conf`
-- `monitor_docker.conf`
+If you want to use Nginx, you can just create a symbolic link
+from `setup/all_containers.conf` to the Nginx websites directories in `/etc/nginx/sites-*` in your machine, and tweak the the provided example configuration with the correct Docker containers IPs
+and relevant references to your certificates.
 
 Same goes with [servers.json](setup/pgadmin/servers.json.example) if you use the `pgadmin` container.
 
@@ -115,10 +113,6 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up
 docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up
 ```
 
-\+ with Nginx containers (tagged with the "live_prod" profile)
-```
-docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml -f --profile live_prod up
-```
 <br>
 
 Docker is great but sometimes tricky ... when changes are made, don't forget to:

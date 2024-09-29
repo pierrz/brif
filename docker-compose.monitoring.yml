@@ -9,6 +9,8 @@ services:
       - pgadmin
     profiles:
       - live_prod
+    networks:
+      - brif-network
 
   flower:
     container_name: brif_flower
@@ -21,6 +23,8 @@ services:
       - "49555:5555"
     depends_on:
       - celery
+    networks:
+      - brif-network
 
   pgadmin:
     container_name: brif_pgadmin
@@ -35,3 +39,5 @@ services:
       - db
     ports:
       - "5050:80"
+    networks:
+      - brif-network

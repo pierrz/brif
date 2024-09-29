@@ -1,7 +1,7 @@
 # Main compose setup
 
 ##############
-# ENV & VOLUMES
+# ENV, VOLUMES & NETWORK
 x-brif-common:
   &brif-common
   environment:
@@ -26,6 +26,11 @@ volumes:
   brif_postgres_db_v:
     name: brif_postgres_db_v
 
+networks:
+  brif-network:
+    name: brif_network
+    driver: bridge
+
 
 services:
   
@@ -44,6 +49,8 @@ services:
       - cantaloupe
       - db
       - celery
+    networks:
+      - brif-network
 
   api_prod:
     <<: *brif-common
@@ -54,6 +61,8 @@ services:
       - api_test
     ports:
       - "${APP_PORT}:${APP_PORT}"
+    networks:
+      - brif-network
 
 #####################
 # SUPPORTING SERVICES
@@ -72,6 +81,8 @@ services:
       - ${CONTENT_DIR}:/mnt/directories
     ports:
       - "${CANTALOUPE_PORT}"
+    networks:
+      - brif-network
 
   celery:
     container_name: brif_celery
@@ -86,6 +97,8 @@ services:
       <<: *brif-common-env
     depends_on:
       - rabbitmq
+    networks:
+      - brif-network
   
   rabbitmq:
     container_name: brif_rabbitmq
@@ -96,6 +109,8 @@ services:
       - "15672:15672"
     volumes:
       - ${LOGS_DIR}/rabbitmq:/var/log/rabbitmq
+    networks:
+      - brif-network
 
   db:
     container_name: brif_postgres
@@ -113,24 +128,5 @@ services:
     volumes:
       - brif_postgres_db_v:/var/lib/postgresql/data
       - ${LOGS_DIR}/postgres:/var/log/postgresql
-
-###############
-# PROXY SERVICE
-
-  nginx:
-    image: nginx:1.27.1
-    container_name: brif_nginx
-    volumes:
-      - ./setup/nginx/brif_docker.conf:/etc/nginx/sites-enabled/brif_docker.conf:ro
-      - ./setup/nginx/docker_base.conf:/etc/nginx/nginx.conf:ro
-      - ./setup/nginx/certificate.conf:/etc/nginx/certificate.conf:ro
-      - ${LOGS_DIR}/nginx:/var/log/nginx
-      # CERTIFICATES (requires the whole directory mounted)
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - api_prod
-    profiles:
-      - live_prod
+    networks:
+      - brif-network

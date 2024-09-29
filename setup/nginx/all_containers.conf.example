@@ -45,7 +45,6 @@ server {
         proxy_pass http://api_server;
     }
 
-    listen 443 ssl;
     include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
 }
 
@@ -69,7 +68,6 @@ server {
         proxy_pass http://image_server;
     }
 
-    listen 443 ssl;
     include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
 }
 
@@ -94,7 +92,6 @@ server {
         proxy_pass http://flower_server;
     }
 
-    listen 443 ssl;
     include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
 }
 
@@ -119,7 +116,6 @@ server {
         proxy_pass http://pgadmin_server;
     }
 
-    listen 443 ssl;
     include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
 }
 
@@ -145,7 +141,6 @@ server {
         proxy_pass http://website_server;
     }
 
-    listen 443 ssl;
     include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
 }
 
@@ -173,7 +168,6 @@ server {
         proxy_pass http://elastic_server;
     }
 
-    listen 443 ssl;
     include /home/pierre/projects/muzai/repo/setup/nginx/certificate.conf;
 }
 
@@ -182,4 +176,9 @@ server {
     listen 80;
     server_name brif.example.com cantaloupe.example.com flower.example.com pgadmin.example.com example.com elastic.example.com;
     return 301 https://$host$request_uri;
+}
+server {
+    listen 80 default_server;
+    server_name _;
+    return 404;
 }

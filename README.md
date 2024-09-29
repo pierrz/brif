@@ -54,6 +54,11 @@ Fetch all the Git LFS resources: `git lfs install && git lfs fetch --all && git 
 If you want to use Nginx, you can just create a symbolic link
 from `setup/all_containers.conf` to the Nginx websites directories in `/etc/nginx/sites-*` in your machine, and tweak the the provided example configuration with the correct Docker containers IPs
 and relevant references to your certificates.
+From the repository root, use this command to retrieve these IPs:
+```
+docker compose ps -q | xargs docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+```
+
 
 Same goes with [servers.json](setup/pgadmin/servers.json.example) if you use the `pgadmin` container.
 

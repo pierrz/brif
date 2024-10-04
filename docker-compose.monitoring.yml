@@ -2,16 +2,6 @@
 
 services:
 
-  nginx:
-    volumes:
-      - ./setup/nginx/monitor_docker.conf:/etc/nginx/sites-enabled/monitor_docker.conf:ro
-    depends_on:
-      - pgadmin
-    profiles:
-      - live_prod
-    networks:
-      - brif-network
-
   flower:
     container_name: brif_flower
     image: mher/flower:latest
@@ -24,7 +14,8 @@ services:
     depends_on:
       - celery
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.111
 
   pgadmin:
     container_name: brif_pgadmin
@@ -40,4 +31,5 @@ services:
     ports:
       - "5050:80"
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.112

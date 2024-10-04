@@ -1,26 +1,28 @@
-# For all the upstreams, replace 'this.docker.container.ip' accordingly
+# Nginx configuration file for all Muzai/Brif containers
+# NB: range starts at 172.20 to avoid conflicts with the bridge network (172.17)
+
 upstream api_server {
-    server this.docker.container.ip:8000 fail_timeout=0;  # brif_api_prod
+    server 172.20.0.102:8000 fail_timeout=0;  # brif_api_prod
 }
 
 upstream image_server {
-    server this.docker.container.ip:8182 fail_timeout=0;  # brif_cantaloupe
+    server 172.20.0.103:8182 fail_timeout=0;  # brif_cantaloupe
 }
 
 upstream flower_server {
-    server this.docker.container.ip:5555 fail_timeout=0;  # brif_flower
+    server 172.20.0.111:5555 fail_timeout=0;  # brif_flower
 }
 
 upstream pgadmin_server {
-    server this.docker.container.ip:80 fail_timeout=0;  # brif_pgadmin
+    server 172.20.0.112:80 fail_timeout=0;  # brif_pgadmin
 }
 
 upstream website_server {
-    server this.docker.container.ip:5000 fail_timeout=0;  # muzai_website
+    server 172.20.0.121:5000 fail_timeout=0;  # muzai_website
 }
 
 upstream elastic_server {
-    server this.docker.container.ip:9200 fail_timeout=0;  # muzai_elastic
+    server 172.20.0.122:9200 fail_timeout=0;  # muzai_elastic
 }
 
 server {

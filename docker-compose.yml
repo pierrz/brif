@@ -30,6 +30,10 @@ networks:
   brif-network:
     name: brif_network
     driver: bridge
+    ipam:
+      config:
+        # range starts at 172.20 to avoid conflicts with the bridge network (172.17)
+        - subnet: 172.20.0.0/16
 
 
 services:
@@ -50,7 +54,8 @@ services:
       - db
       - celery
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.101
 
   api_prod:
     <<: *brif-common
@@ -62,7 +67,8 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.102
 
 #####################
 # SUPPORTING SERVICES
@@ -82,7 +88,8 @@ services:
     ports:
       - "${CANTALOUPE_PORT}"
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.103
 
   celery:
     container_name: brif_celery
@@ -98,7 +105,8 @@ services:
     depends_on:
       - rabbitmq
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.104
   
   rabbitmq:
     container_name: brif_rabbitmq
@@ -110,7 +118,8 @@ services:
     volumes:
       - ${LOGS_DIR}/rabbitmq:/var/log/rabbitmq
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.105
 
   db:
     container_name: brif_postgres
@@ -129,4 +138,5 @@ services:
       - brif_postgres_db_v:/var/lib/postgresql/data
       - ${LOGS_DIR}/postgres:/var/log/postgresql
     networks:
-      - brif-network
+      brif-network:
+        ipv4_address: 172.20.0.106

@@ -23,8 +23,10 @@ x-brif-common:
     - "cantaloupe:http"
 
 volumes:
-  brif_postgres_db_v:
-    name: brif_postgres_db_v
+  brif_vpostgres:
+    name: brif_vpostgres
+  brif_vrabbitmq:
+    name: brif_vrabbitmq
 
 networks:
   brif-network:
@@ -117,6 +119,7 @@ services:
       - "15672:15672"
     volumes:
       - ${LOGS_DIR}/rabbitmq:/var/log/rabbitmq
+      - brif_vrabbitmq:/var/lib/rabbitmq
     networks:
       brif-network:
         ipv4_address: 172.20.0.105
@@ -135,7 +138,7 @@ services:
       DB_USER: "${DB_USER}"
       DB_PASSWORD: "${DB_PASSWORD}"
     volumes:
-      - brif_postgres_db_v:/var/lib/postgresql/data
+      - brif_vpostgres:/var/lib/postgresql/data
       - ${LOGS_DIR}/postgres:/var/log/postgresql
     networks:
       brif-network:

@@ -134,14 +134,13 @@ dmypy.json
 .sonar-scanner.properties
 .scannerwork
 
-# repo specific (logs, env, nginx confs, muz source)
+# repo specific (logs, env, nginx confs, muzai source)
 logs
 setup/rabbitmq/definitions.json
 setup/pgadmin/servers.json
 setup/nginx/*.conf
-muz_app
+muzai_app
 head_meta.html
-favicon/
 cantaloupe.properties
 
 # including only test dataset

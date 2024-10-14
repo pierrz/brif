@@ -152,3 +152,11 @@ table, th, td {
 .footer p strong {
   color: rgb(46, 51, 61)
 }
+
+/* Flash message */
+.flash .message-body {
+  background-color: rgb(239, 250, 245);
+}
+.flash .message-body strong {
+  color: rgb(28, 90, 62)
+}

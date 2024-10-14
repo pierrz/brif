@@ -15,14 +15,14 @@ WORKDIR /opt/app
 RUN apt update \
     && apt install -y npm \
     && cd /tmp \
-    && npm install tify bulma @creativebulma/bulma-tooltip
+    && npm install tify@0.31.0 bulma@1.0.2 @creativebulma/bulma-tooltip@1.2.0
 
 # Copy only requirements to cache them in docker layer
 COPY ./app/pyproject.toml ./app/poetry.lock* ./
 
 # Project initialization:
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-dev
+    && poetry install --no-interaction --no-ansi --only main
 
 # Creating folders and files for the project:
 COPY ./app ./

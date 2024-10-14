@@ -1,11 +1,11 @@
 # Main compose setup
 
+name: "${PROJECT_NAME}"
+
 ##############
 # ENV, VOLUMES & NETWORK
-x-brif-common:
-  &brif-common
-  environment:
-    &brif-common-env
+x-brif-common: &brif-common
+  environment: &brif-common-env
     BASE_URL: "${BASE_URL}"
     APP_SUBDOMAIN: "${APP_SUBDOMAIN}"
     APP_PORT: "${APP_PORT}"
@@ -23,8 +23,8 @@ x-brif-common:
     - "cantaloupe:http"
 
 volumes:
-  brif_vpostgres:
-    name: brif_vpostgres
+  brif_vdb:
+    name: brif_vdb
   brif_vrabbitmq:
     name: brif_vrabbitmq
 
@@ -105,12 +105,12 @@ services:
     environment:
       <<: *brif-common-env
     depends_on:
-      - rabbitmq
+      - rabbit-mq
     networks:
       brif-network:
         ipv4_address: 172.20.0.104
   
-  rabbitmq:
+  rabbit-mq:
     container_name: brif_rabbitmq
     image: rabbitmq:3.8-management
     restart: on-failure
@@ -125,7 +125,7 @@ services:
         ipv4_address: 172.20.0.105
 
   db:
-    container_name: brif_postgres
+    container_name: brif_db
     build:
       context: .
       dockerfile: setup/postgres/Dockerfile
@@ -138,7 +138,7 @@ services:
       DB_USER: "${DB_USER}"
       DB_PASSWORD: "${DB_PASSWORD}"
     volumes:
-      - brif_vpostgres:/var/lib/postgresql/data
+      - brif_vdb:/var/lib/postgresql/data
       - ${LOGS_DIR}/postgres:/var/log/postgresql
     networks:
       brif-network:

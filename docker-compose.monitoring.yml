@@ -1,5 +1,7 @@
 # Compose setup for monitoring services
 
+name: "${PROJECT_NAME}"
+
 services:
 
   flower:

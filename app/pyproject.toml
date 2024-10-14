@@ -1,24 +1,28 @@
 [tool.poetry]
 name = "brif"
-version = "0.2.0"
+version = "0.2.3"
 description = "Docker based tool to deploy IIIF platforms."
 authors = ["Pierre-Edouard Barrault"]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9"   # pinned after fastapi docker image
 aiofiles = "==0.7.0"
+anyio = "==3.4.0"
 celery = "==5.2.0"
 iiif-prezi = "==0.3.0"
-itsdangerous = "*"
+itsdangerous = "==2.0.1"
+fastapi = "==0.68.1"
 Jinja2 = "==3.0.3"
 numpy = "==1.21.4"
 pydantic = "==1.8.2"
 psycopg2-binary = "==2.9.2"
-pytest = "==6.2.5"  # used by the test img
+pytest = "==6.2.5"
 python-dotenv = "==0.19.2"
 requests = "==2.26.0"
+setuptools = "==57.5.0"
 starlette-core = {git = "https://github.com/accent-starlette/starlette-core", branch = "master"}
 typing = "==3.7.4.3"
+typing_extensions  = "==4.0.0"
 
 [tool.poetry.dev-dependencies]
 black = "==21.10b0"

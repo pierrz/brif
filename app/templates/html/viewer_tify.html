@@ -4,25 +4,21 @@
   <head>
         {% include "head_meta.html" %}
         <link href="{{url_for('static', path='/tify/tify.css')}}" rel="stylesheet" media="screen">
+        <script src="{{url_for('static', path='/tify/tify.js')}}"></script>
   </head>
 
   <body>
   <section class="section">
-        <div id="viewer"></div>
-        <script>
-            url = window.location.href.replace("/view", "") + "/manifest.json"
-            tifyOptions = {
-                container: "#viewer",
-                immediateRender: false,
-                init: true,
-                language: "en",
-                manifest: url,
-                stylesheet: null,
-                title: null,
-            }
-        </script>
+        <div id="viewer" style="height: 100vh; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;"></div>
   </section>
-  <script src="{{url_for('static', path='/tify/tify.js')}}"></script>
   </body>
+
+<script>
+    url = window.location.href.replace("/view", "") + "/manifest.json"
+    new Tify({
+      container: '#viewer',
+      manifestUrl: url
+    })
+</script>
 
 </html>

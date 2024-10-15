@@ -1,3 +1,4 @@
 .venv
 */.venv
 */.pytest_cache
+.env

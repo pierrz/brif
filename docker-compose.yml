@@ -66,8 +66,8 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --reload
     depends_on:
       - api_test
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
+    # ports:
+    #   - "${APP_PORT}:${APP_PORT}"
     networks:
       brif-network:
         ipv4_address: 172.20.0.102
@@ -87,8 +87,8 @@ services:
       # CHANGE WITH CAUTION the next mount as it is tied to cantaloupe/properties
       # via FilesystemSource.BasicLookupStrategy.path_prefix
       - ${CONTENT_DIR}:/mnt/directories
-    ports:
-      - "${CANTALOUPE_PORT}"
+    # ports:
+    #   - "${CANTALOUPE_PORT}"
     networks:
       brif-network:
         ipv4_address: 172.20.0.103
@@ -114,9 +114,9 @@ services:
     container_name: brif_rabbitmq
     image: rabbitmq:3.8-management
     restart: on-failure
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    # ports:
+    #   - "5672:5672"
+    #   - "15672:15672"
     volumes:
       - ${LOGS_DIR}/rabbitmq:/var/log/rabbitmq
       - brif_vrabbitmq:/var/lib/rabbitmq

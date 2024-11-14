@@ -11,8 +11,6 @@ services:
     environment:
       CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
       CELERY_RESULT_BACKEND: "${CELERY_RESULT_BACKEND}"
-    ports:
-      - "49555:5555"
     depends_on:
       - celery
     networks:
@@ -30,8 +28,6 @@ services:
       - ./setup/pgadmin/servers.json:/pgadmin4/servers.json
     depends_on:
       - db
-    ports:
-      - "5050:80"
     networks:
       brif-network:
         ipv4_address: 172.20.0.112

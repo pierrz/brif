@@ -30,6 +30,7 @@ RUN cd /tmp \
 #    && unzip test_images.zip -d /mnt/fres/dsets/directories
 
 # set & start cantaloupe
-COPY ./setup/cantaloupe/cantaloupe.properties /cantaloupe/cantaloupe.properties
+# cantaloupe.properties is mounted at runtime via k8s ConfigMap
+# If running locally, mount or COPY the file manually
 CMD cd /cantaloupe \
     && java -Dcantaloupe.config=/cantaloupe/cantaloupe.properties -Xmx2g -jar /cantaloupe/cantaloupe-5.0.4.jar

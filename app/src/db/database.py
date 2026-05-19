@@ -53,7 +53,7 @@ def prepare_dashboard_table():
         valid integer,
         valid_img integer,
         status varchar
-        );"""
+        )"""
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -70,7 +70,7 @@ def insert_row(dataset: Dataset):
                                 {dataset.valid},
                                 {dataset.valid_img},
                                 'processed'
-                        );"""
+                        )"""
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -79,7 +79,7 @@ def insert_row(dataset: Dataset):
 def load_input_dataset(dataset: Dataset):
     conn, cur = init_db_connection()
     cur.execute(
-        query=f"INSERT INTO dashboard (fullname, dir_name, total, mapping, status) VALUES ('{dataset.fullname}', '{dataset.dir_name}', '{dataset.total}', '{dataset.mapping}', '{dataset.status}');"
+        query=f"INSERT INTO dashboard (fullname, dir_name, total, mapping, status) VALUES ('{dataset.fullname}', '{dataset.dir_name}', '{dataset.total}', '{dataset.mapping}', '{dataset.status}')"
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -126,7 +126,7 @@ def get_db_data(datasets_list):
         else:
             query_str += f" OR fullname = '{dataset}'"
 
-    full_query = f"SELECT {columns} FROM dashboard WHERE {query_str};"
+    full_query = f"SELECT {columns} FROM dashboard WHERE {query_str}"
     conn, cur = init_db_connection()
     cur.execute(full_query)
     data = cur.fetchall()

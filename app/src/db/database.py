@@ -89,10 +89,10 @@ def update_row(dataset_fullname):
     conn, cur = init_db_connection()
     cur.execute(
         f"""UPDATE dashboard
-        SET total = null
-        SET valid = null
-        SET valid_imgs = null
-        SET status = 'unprocessed'
+        SET total = null,
+            valid = null,
+            valid_imgs = null,
+            status = 'unprocessed'
         WHERE fullname = '{dataset_fullname}'"""
     )
     conn.commit()
@@ -118,6 +118,8 @@ def delete_row(dataset_fullname):
 
 
 def get_db_data(datasets_list):
+    if not datasets_list:
+        return []
 
     query_str = str()
     for idx, dataset in enumerate(datasets_list):

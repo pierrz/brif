@@ -1,6 +1,6 @@
 import datetime
 import os
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import src.mappings.item_key_names as ikn
 from config import app_config
@@ -92,9 +92,7 @@ def generate_manifests(dataset_meta):
     dataset_path = get_dataset_path(dataset_dir_name, dataset_name)
     mapping_json, mapping_type = get_mapping(dataset_path)
     mode = dataset_path.suffix[1:]
-    output_dir = Path(PurePath(os.getcwd()).parent, "data", "output")
-    dataset_dir = Path(output_dir, dataset_dir_name)
-    split_dir, manifest_dir = get_dirs(dataset_dir)
+    split_dir, manifest_dir = get_dirs(dataset_dir_name)
 
     # init factory & collection
     factory = create_and_set_factory(dataset_dir_name, manifest_dir)

@@ -13,17 +13,18 @@ router = APIRouter(
     responses={404: {"description": "Issue with endpoint"}},
 )
 
-# Only the test_dataset may be deleted through the API.
+# Only this specific dataset may be deleted through the API.
 DELETABLE_DATASET_DIR = "test_dataset"
+DELETABLE_DATASET_NAME = "test_records.csv"
 
 
 @router.get("/delete_dataset/{dataset_dir}/{dataset_name}")
 async def delete_dataset(request: Request, dataset_dir, dataset_name):
 
-    if dataset_dir != DELETABLE_DATASET_DIR:
+    if dataset_dir != DELETABLE_DATASET_DIR or dataset_name != DELETABLE_DATASET_NAME:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Deletion restricted to '{DELETABLE_DATASET_DIR}' datasets."
+            detail=f"Deletion restricted to '{DELETABLE_DATASET_DIR}/{DELETABLE_DATASET_NAME}'."
         )
 
     delete_dataset_task.delay(dataset_dir, dataset_name)

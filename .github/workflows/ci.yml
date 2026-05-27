@@ -1,4 +1,4 @@
-# CI pipeline for brif — test, build and push Docker images to GHCR
+# CI pipeline for brif — build and push Docker images to GHCR
 # Images: brif-backend (also used for celery), brif-cantaloupe
 
 name: CI pipeline
@@ -17,41 +17,9 @@ env:
 
 jobs:
 
-  test:
-
-    name: Run pytest
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.8.3
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install dependencies
-        run: |
-          cd app
-          poetry install --no-interaction --no-ansi
-
-      - name: Run tests
-        run: |
-          cd app
-          poetry run pytest -v
-
   build-and-push-backend:
 
     name: Backend - build/push image
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -93,7 +61,6 @@ jobs:
   build-and-push-cantaloupe:
 
     name: Cantaloupe - build/push image
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

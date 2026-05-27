@@ -59,10 +59,14 @@ async def dashboard(request: Request):
 
     input_dir = Path(app_config.DATA_DIR, "input")
     input_dataset_names, input_data = gather_input_datasets(input_dir)
+    print(f"[DASHBOARD] Found {len(input_dataset_names)} datasets: {input_dataset_names}")
 
     # udpate the database then retrieve data from it
     sync_datasets_with_db(input_dataset_names, input_data)
     data = get_db_data(input_dataset_names)
+    print(f"[DASHBOARD] DB returned {len(data)} rows")
+    for row in data:
+        print(f"[DASHBOARD]   - {row.fullname} | {row.status} | {row.total}")
 
     return templates.TemplateResponse(
         "dashboard.html",

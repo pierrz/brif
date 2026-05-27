@@ -15,10 +15,21 @@ from psycopg2.errors import \
     DuplicateTable  # triggers pylint warnings but do not make the app fail ...
 from src.db.database import prepare_dashboard_table
 from src.routers import api_endpoints, dashboard, tasks
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+
+
+class ProxyFixMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        forwarded_proto = request.headers.get("X-Forwarded-Proto")
+        if forwarded_proto == "https":
+            request.scope["scheme"] = "https"
+        return await call_next(request)
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.add_middleware(ProxyFixMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SessionMiddleware, secret_key=app_config.SECRET_KEY)
 

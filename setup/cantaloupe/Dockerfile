@@ -32,5 +32,5 @@ RUN cd /tmp \
 # set & start cantaloupe
 # cantaloupe.properties is mounted at runtime via k8s ConfigMap
 # If running locally, mount or COPY the file manually
-CMD cd /cantaloupe \
-    && java -Dcantaloupe.config=/cantaloupe/cantaloupe.properties -Xmx2g -jar /cantaloupe/cantaloupe-5.0.4.jar
+WORKDIR /cantaloupe
+CMD ["java", "-Dcantaloupe.config=/cantaloupe/cantaloupe.properties", "-Xmx2g", "-jar", "/cantaloupe/cantaloupe-5.0.4.jar"]

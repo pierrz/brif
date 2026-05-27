@@ -24,8 +24,7 @@ def gather_input_datasets(input_dir):
 
     # walk over all input dirs
     for root_dir, subdirs, dataset_files in os.walk(input_dir):
-        # Process subdirectories OR the root if it has CSV files (flat dataset like test_dataset)
-        if root_dir != str(input_dir) or any(f.endswith('.csv') for f in dataset_files):
+        if root_dir != str(input_dir):
 
             # check all datasets file within a directory, using either a default mapping or a provided one
             datasets_pack = prepare_input_datasets(root_dir, dataset_files)

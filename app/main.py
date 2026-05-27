@@ -22,20 +22,25 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SessionMiddleware, secret_key=app_config.SECRET_KEY)
 
-if app_config.LOCAL_DEV:
-    localhost_origins = [
-        "http://localhost",
-        "https://localhost",
-        "http://localhost:8000",
-    ]
+# CORS: always enabled for production and local dev
+base = app_config.BASE_URL.replace("https://", "").replace("http://", "")
+allowed_origins = [
+    "http://localhost",
+    "https://localhost",
+    "http://localhost:8000",
+    f"https://{base}",
+    f"https://*.{base}",
+    f"https://brif.{base}",
+    "*",
+]
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=localhost_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # routers
 app.include_router(dashboard.router)

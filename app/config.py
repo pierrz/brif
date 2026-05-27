@@ -21,7 +21,7 @@ class Config(BaseSettings):
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     IIIF_IMG_VERSION = 2
     API_IIIF_IMAGE = f"{os.getenv('API_IMAGE_BACKEND')}iiif/{IIIF_IMG_VERSION}/"  # cantaloupe container
-    DATA_DIR = Path(Path(os.getcwd()).parent, "data")
+    DATA_DIR = Path(os.getenv("DATA_DIR", Path(Path(os.getcwd()).parent, "data")))
     SECRET_KEY = os.getenv("SECRET_KEY")
 
     # local or remote settings

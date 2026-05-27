@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from src.db.database import delete_row
 from src.tasks.etl.task_etl_delete import delete_dataset_task
@@ -13,9 +13,18 @@ router = APIRouter(
     responses={404: {"description": "Issue with endpoint"}},
 )
 
+# Only the test_dataset may be deleted through the API.
+DELETABLE_DATASET_DIR = "test_dataset"
+
 
 @router.get("/delete_dataset/{dataset_dir}/{dataset_name}")
 async def delete_dataset(request: Request, dataset_dir, dataset_name):
+
+    if dataset_dir != DELETABLE_DATASET_DIR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Deletion restricted to '{DELETABLE_DATASET_DIR}' datasets."
+        )
 
     delete_dataset_task.delay(dataset_dir, dataset_name)
     fullname = f"{dataset_dir}/{dataset_name}"

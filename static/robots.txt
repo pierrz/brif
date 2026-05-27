@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /iiif/pres/
+
+Sitemap: https://brif.muzai.io/sitemap.xml

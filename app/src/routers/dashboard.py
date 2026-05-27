@@ -57,7 +57,7 @@ def sync_datasets_with_db(input_dataset_names, input_data):
 @router.get("/demo", include_in_schema=False)
 async def dashboard(request: Request):
 
-    input_dir = Path(app_config.DATA_DIR, "input")
+    input_dir = Path(app_config.DATA_DIR, "input", "test_dataset")
     input_dataset_names, input_data = gather_input_datasets(input_dir)
 
     # udpate the database then retrieve data from it

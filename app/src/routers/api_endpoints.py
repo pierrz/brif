@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import src.mappings.item_key_names as ikn
@@ -46,7 +47,11 @@ async def sub_manifest_api(dataset_name: str, manifest_id: str, sub_level: str, 
     :return: the JSON data for this sub-level
     """
     manifest_path = Path(get_dirs(dataset_name)[1], manifest_id, sub_level, filename)
-    return JSONResponse(load_json(manifest_path))
+    try:
+        data = load_json(manifest_path)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return JSONResponse({"error": "Manifest not found"}, status_code=404)
+    return JSONResponse(data)
 
 
 @router.get("/{dataset_name}/{manifest_id}/manifest.json")
@@ -60,7 +65,11 @@ async def manifest_api(dataset_name: str, manifest_id: str):
     manifest_path = Path(
         get_dirs(dataset_name)[1], manifest_id, f"{ikn.manif_name}.json"
     )
-    return JSONResponse(load_json(manifest_path))
+    try:
+        data = load_json(manifest_path)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return JSONResponse({"error": "Manifest not found"}, status_code=404)
+    return JSONResponse(data)
 
 
 @router.get("/{dataset_name}/collection/collection_manifest.json")
@@ -73,7 +82,11 @@ async def collection_manifest_api(dataset_name: str):
     coll_manifest_path = Path(
         get_dirs(dataset_name)[1], ikn.coll_name, f"{ikn.coll_manif_name}.json"
     )
-    return JSONResponse(load_json(coll_manifest_path))
+    try:
+        data = load_json(coll_manifest_path)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return JSONResponse({"error": "Manifest not found"}, status_code=404)
+    return JSONResponse(data)
 
 
 # Samples routes

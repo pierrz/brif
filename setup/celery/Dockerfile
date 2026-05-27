@@ -21,4 +21,4 @@ COPY ./app .
 
 ENV PYTHONPATH=/opt/celery_app
 
-CMD celery --app=worker.celery worker --loglevel=info --logfile=logs/celery.log
+CMD ["celery", "--app=worker.celery", "worker", "--loglevel=info", "--logfile=logs/celery.log"]

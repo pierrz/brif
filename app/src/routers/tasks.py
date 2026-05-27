@@ -44,7 +44,7 @@ async def process_dataset(request: Request, dataset_dir, dataset_name):
         | generate_manifests.s()
         | load_results_to_db.s()
     )
-    chain()
+    chain.delay()
     message(
         request,
         f"Dataset '{dataset_dir}/{dataset_name}' is getting processed ...",

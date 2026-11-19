@@ -4,8 +4,9 @@
   Taken unchanged from cantaloupe-project/cantaloupe, src/main/resources/logback.xml at commit
   6b1fae42981d82be2147a55d403460618ae2de42 (pull request #1008, merged 2026-10-28). The 5.0.8 release ships a logback.xml whose
   <if condition=...> blocks no longer evaluate under its logback 1.6.3, so it attaches no appender and writes no log at all
-  (issue #1007); upstream has not released the fix yet. The image points the JVM at this file with -Dlogback.configurationFile.
-  Remove it, and that flag, with the first release that contains the fix.
+  (issue #1007); upstream has not released the fix yet. The image puts this file first on the classpath (/cantaloupe/conf, in front of
+  the jar): Cantaloupe re-reads logback.xml from the classpath after it starts, so -Dlogback.configurationFile does not hold.
+  Remove the file and the classpath entry with the first release that contains the fix.
 -->
 <configuration>
   <import class="edu.illinois.library.cantaloupe.logging.AccessLogFilter"/>

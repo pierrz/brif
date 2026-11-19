@@ -36,6 +36,4 @@ log_cli_level = "WARNING"
 filterwarnings = [
     "error",
     "ignore::UserWarning",
-    # TODO: remove once Jinja is updated
-    "ignore:'contextfunction' is renamed to 'pass_context', the old name will be removed in Jinja 3.1.:DeprecationWarning",
 ]

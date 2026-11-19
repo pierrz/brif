@@ -3,7 +3,6 @@ Test oriented library
 """
 
 
-import os
 from pathlib import Path
 
 from src.libs.main_lib import load_json
@@ -11,10 +10,12 @@ from src.libs.main_lib import load_json
 
 def get_test_fixtures_path():
     """
-    Retrieves the test fixtures directory path
-    :return: test fixtures directory path (string)
+    Retrieves the test fixtures directory path, relative to this file ('app/test/fixtures').
+    It used to be hardcoded as '/opt/app/test/fixtures', which only exists in the Docker image
+    (where this resolves to the very same directory).
+    :return: test fixtures directory path, as a list of path parts
     """
-    return [os.sep, "opt", "app", "test", "fixtures"]
+    return list(Path(__file__).resolve().parents[2].joinpath("test", "fixtures").parts)
 
 
 fixtures_path_array = get_test_fixtures_path()

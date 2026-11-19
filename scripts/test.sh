@@ -9,12 +9,13 @@
 #    version from app/poetry.lock, as 'poetry install' does in the images. Poetry is not needed.
 # 2. Needs a Postgres. If none answers on $PGHOSTADDR:$PGPORT and docker is available, a throwaway
 #    postgres:14.2 container (the version of setup/postgres) is started and removed at the end.
+#    It listens on the loopback only and trusts its clients, like the service container of CI.
 #    Cantaloupe and Celery are test doubles, RabbitMQ is optional (see below).
 # 3. Runs pytest from app/.
 #
 # Settings, all optional (the defaults are those of the CI service containers):
 #   PGHOSTADDR, PGPORT                Postgres address (127.0.0.1, 5432)
-#   DB_NAME, DB_USER, DB_PASSWORD     Postgres database and role (brif, brif, brif)
+#   DB_NAME, DB_USER, DB_PASSWORD     Postgres database, role and password (brif, brif, none)
 #   BRIF_TEST_AMQP_URL                a RabbitMQ to also run test_celery_broker.py against,
 #                                     e.g. amqp://guest:guest@127.0.0.1:5672// (skipped when unset)
 #   BRIF_TEST_VENV                    where to put the environment (<repo>/.venv)
@@ -28,7 +29,7 @@ export PGHOSTADDR=${PGHOSTADDR:-127.0.0.1}
 export PGPORT=${PGPORT:-5432}
 export DB_NAME=${DB_NAME:-brif}
 export DB_USER=${DB_USER:-brif}
-export DB_PASSWORD=${DB_PASSWORD:-brif}
+export DB_PASSWORD=${DB_PASSWORD-}
 
 command -v uv >/dev/null || {
     echo "uv is required: https://docs.astral.sh/uv/getting-started/installation/" >&2
@@ -84,12 +85,19 @@ if ! db_answers; then
         echo "Start a Postgres 14 with the database '$DB_NAME' owned by the role '$DB_USER', or set PGHOSTADDR and PGPORT." >&2
         exit 1
     fi
+    case $PGHOSTADDR in
+        127.* | ::1) ;;
+        *)
+            echo "Not starting a Postgres that trusts its clients on $PGHOSTADDR: use 127.0.0.1 or start your own." >&2
+            exit 1
+            ;;
+    esac
     container=brif-test-db-$$
     trap 'docker rm --force "$container" >/dev/null 2>&1 || true' EXIT
     echo "Starting a throwaway Postgres ($container) on $PGHOSTADDR:$PGPORT ..."
     docker run --detach --rm --name "$container" \
         --publish "$PGHOSTADDR:$PGPORT:5432" \
-        --env POSTGRES_USER="$DB_USER" --env POSTGRES_PASSWORD="$DB_PASSWORD" --env POSTGRES_DB="$DB_NAME" \
+        --env POSTGRES_USER="$DB_USER" --env POSTGRES_DB="$DB_NAME" --env POSTGRES_HOST_AUTH_METHOD=trust \
         postgres:14.2 >/dev/null
     for _ in $(seq 1 60); do
         docker exec "$container" pg_isready --quiet --host 127.0.0.1 --username "$DB_USER" --dbname "$DB_NAME" && break

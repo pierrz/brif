@@ -10,7 +10,7 @@ Docker image and in CI:
   serialization stay real. A real broker is only checked by test_celery_broker.py;
 - Postgres is real (service container in CI): the SQL of the app is built as strings,
   only a real database tells whether it is valid. Connection settings come from the
-  environment, with the defaults of the CI service. The app connects to host 'db'
+  environment, with the defaults of the CI service (trust authentication, no password). The app connects to host 'db'
   (hardcoded): PGHOSTADDR makes libpq use the address below and skip the lookup;
 - DATA_DIR is left unusable on purpose: tests that touch data use the 'data_dir' fixture.
 """
@@ -48,7 +48,7 @@ TEST_ENV = {
 DB_DEFAULTS = {
     "DB_NAME": "brif",
     "DB_USER": "brif",
-    "DB_PASSWORD": "brif",
+    "DB_PASSWORD": "",  # the Postgres of CI and of scripts/test.sh uses trust authentication
     "PGHOSTADDR": "127.0.0.1",
     "PGPORT": "5432",
 }

@@ -10,7 +10,6 @@ import re
 
 import pytest
 from config import Config, app_config, celery_config
-from fastapi.routing import APIRoute
 from main import app
 from src.libs.main_lib import load_json
 from src.tasks.etl.task_etl_generate_manifests import generate_manifests
@@ -31,26 +30,42 @@ DOCUMENTED = {
     "/task/delete_dataset/{dataset_dir}/{dataset_name}",
     "/task/process_dataset/{dataset_dir}/{dataset_name}",
 }
-NOT_DOCUMENTED = {
+# one URL per route of the API, the documented ones and the others (/demo, the viewer, the examples, the tests)
+ALL_URLS = [
     "/demo",
-    "/iiif/pres/{dataset_name}/{manifest_id}/view",
-    "/iiif/pres/{dataset_name}/manifest_api_example_view",
+    "/iiif/pres/d/collection/collection_manifest.json",
+    "/iiif/pres/d/image_api_example",
+    "/iiif/pres/d/manifest_api_example",
+    "/iiif/pres/d/manifest_api_example_view",
+    "/iiif/pres/d/mapping",
+    "/iiif/pres/d/m/manifest.json",
+    "/iiif/pres/d/m/view",
+    "/iiif/pres/d/m/canvas/c.json",
+    "/task/delete_dataset/d/n",
+    "/task/process_dataset/d/n",
     "/test/api_live",
     "/test/check_cantaloupe",
     "/test/check_iiif_pipeline",
     "/test/load_db",
     "/test/read_db",
-}
+]
 
 
-def test_the_api_routes_are_all_get_routes():
-    routes = [route for route in app.routes if isinstance(route, APIRoute)]
-    assert {route.path for route in routes if route.include_in_schema} == DOCUMENTED
-    assert {route.path for route in routes if not route.include_in_schema} == NOT_DOCUMENTED
-    assert all(route.methods == {"GET"} for route in routes)
+@pytest.mark.parametrize("url", ALL_URLS)
+def test_the_routes_of_the_api_answer_get_only(client, url):
+    """
+    Nothing but GET: the other methods are refused before any code of the route runs
+    """
+    for method in ("post", "put", "delete", "patch"):
+        response = getattr(client, method)(url)
+        assert response.status_code == 405, (method, url)
+        assert response.json() == {"detail": "Method Not Allowed"}
 
 
 def test_the_openapi_document_lists_the_documented_routes_only(client):
+    """
+    The other routes (/demo, the viewer, the examples views, /test/...) are not in the documentation
+    """
     document = client.get("/openapi.json").json()
     assert set(document["paths"]) == DOCUMENTED
     assert all(list(methods) == ["get"] for methods in document["paths"].values())
@@ -89,7 +104,8 @@ def test_the_forwarded_protocol_makes_the_links_of_the_pages_https(
 
 def test_every_origin_may_read_the_api(client):
     response = client.get("/test/api_live", headers={"Origin": "https://other.example"})
-    assert response.headers["access-control-allow-origin"] == "*"
+    # the origin is echoed (Starlette answered "*" before: a browser refuses "*" with credentials)
+    assert response.headers["access-control-allow-origin"] == "https://other.example"
     assert response.headers["access-control-allow-credentials"] == "true"
 
 
@@ -103,7 +119,6 @@ def test_a_preflight_request_is_answered_for_any_method_and_header(client):
         },
     )
     assert response.status_code == 200
-    # the origin is echoed (Starlette answered "*" before: a browser refuses "*" with credentials)
     assert response.headers["access-control-allow-origin"] == "https://other.example"
     assert response.headers["access-control-allow-credentials"] == "true"
     assert response.headers["access-control-allow-headers"] == "x-whatever"
@@ -126,7 +141,7 @@ def test_answers_are_gzipped_when_the_client_accepts_it(client, data_dir):
 
     small = client.get("/test/api_live")
     assert small.headers["content-encoding"] == "gzip"
-    assert small.headers["vary"] == "Accept-Encoding"
+    assert small.headers["vary"] == "Accept-Encoding, Origin"  # CORS adds Origin to every answer now
     assert small.json() == {"message": "Hello World"}
 
     plain = client.get("/test/api_live", headers={"Accept-Encoding": "identity"})

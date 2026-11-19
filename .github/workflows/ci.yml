@@ -1,4 +1,4 @@
-# CI pipeline for brif — build and push Docker images to GHCR
+# CI pipeline for brif — run the tests, then build and push Docker images to GHCR
 # Images: brif-backend (also used for celery), brif-cantaloupe
 
 name: CI pipeline
@@ -8,18 +8,78 @@ on:
   pull_request:
     branches:
       - main
-      - refactor-k8s
   push:
-    branches: ["main", "refactor-k8s"]
+    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
+  # images are only pushed from main: pull request builds used to overwrite ':latest'
+  PUSH_IMAGES: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
 jobs:
+
+  test:
+
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    # Same services as docker-compose.yml (postgres:14.2 as setup/postgres, rabbitmq:3.8).
+    # Cantaloupe and the Celery worker are test doubles, see app/test/conftest.py.
+    services:
+      postgres:
+        image: postgres:14.2
+        env:
+          POSTGRES_USER: brif
+          POSTGRES_DB: brif
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username brif --dbname brif"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      rabbitmq:
+        image: rabbitmq:3.8
+        env:
+          RABBITMQ_DEFAULT_USER: brif
+          RABBITMQ_DEFAULT_PASS: brif
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 12
+
+    steps:
+      # the test fixtures (json) are in Git LFS
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          enable-cache: false
+
+      # the very script to run locally: bash scripts/test.sh
+      - name: Run the tests
+        env:
+          PGHOSTADDR: 127.0.0.1
+          PGPORT: "5432"
+          BRIF_TEST_AMQP_URL: amqp://brif:brif@127.0.0.1:5672//
+        run: bash scripts/test.sh
 
   build-and-push-backend:
 
     name: Backend - build/push image
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,19 +108,28 @@ jobs:
           images: ${{ env.REGISTRY }}/pierrz/brif-backend
 
       - name: Build and push backend image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: setup/app/Dockerfile
-          push: true
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           tags: |
             ${{ env.REGISTRY }}/pierrz/brif-backend:latest
             ${{ env.REGISTRY }}/pierrz/brif-backend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Show the pushed image digest in the job summary
+        if: env.PUSH_IMAGES == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo "- backend: \`${REGISTRY}/pierrz/brif-backend@${DIGEST}\` (tags \`latest\`, \`${GITHUB_SHA}\`)" >> "$GITHUB_STEP_SUMMARY"
+
   build-and-push-cantaloupe:
 
     name: Cantaloupe - build/push image
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -89,12 +158,20 @@ jobs:
           images: ${{ env.REGISTRY }}/pierrz/brif-cantaloupe
 
       - name: Build and push cantaloupe image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: setup/cantaloupe/Dockerfile
-          push: true
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           tags: |
             ${{ env.REGISTRY }}/pierrz/brif-cantaloupe:latest
             ${{ env.REGISTRY }}/pierrz/brif-cantaloupe:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Show the pushed image digest in the job summary
+        if: env.PUSH_IMAGES == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo "- cantaloupe: \`${REGISTRY}/pierrz/brif-cantaloupe@${DIGEST}\` (tags \`latest\`, \`${GITHUB_SHA}\`)" >> "$GITHUB_STEP_SUMMARY"

@@ -14,12 +14,12 @@ class Dataset(BaseModel):
     dir_name: str
     mapping: str
     total: int = 0
-    valid: Optional[int]
-    valid_img: Optional[int]
+    valid: Optional[int] = None
+    valid_img: Optional[int] = None
     status: str
 
     def field_list(self):
-        return list(self.__fields__.keys())
+        return list(type(self).model_fields)
 
 
 class InputDataset(Dataset):

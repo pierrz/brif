@@ -1,4 +1,4 @@
-# CI pipeline for brif — build and push Docker images to GHCR
+# CI pipeline for brif — run the tests, then build and push Docker images to GHCR
 # Images: brif-backend (also used for celery), brif-cantaloupe
 
 name: CI pipeline
@@ -8,18 +8,76 @@ on:
   pull_request:
     branches:
       - main
-      - refactor-k8s
   push:
-    branches: ["main", "refactor-k8s"]
+    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
 
+  test:
+
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    # Same services as docker-compose.yml (postgres:14.2 as setup/postgres, rabbitmq:3.8).
+    # Cantaloupe and the Celery worker are test doubles, see app/test/conftest.py.
+    services:
+      postgres:
+        image: postgres:14.2
+        env:
+          POSTGRES_USER: brif
+          POSTGRES_PASSWORD: brif
+          POSTGRES_DB: brif
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username brif --dbname brif"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      rabbitmq:
+        image: rabbitmq:3.8
+        env:
+          RABBITMQ_DEFAULT_USER: brif
+          RABBITMQ_DEFAULT_PASS: brif
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 12
+
+    steps:
+      # the test fixtures (json) are in Git LFS
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          enable-cache: false
+
+      # the very script to run locally: bash scripts/test.sh
+      - name: Run the tests
+        env:
+          PGHOSTADDR: 127.0.0.1
+          PGPORT: "5432"
+          BRIF_TEST_AMQP_URL: amqp://brif:brif@127.0.0.1:5672//
+        run: bash scripts/test.sh
+
   build-and-push-backend:
 
     name: Backend - build/push image
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,6 +119,7 @@ jobs:
   build-and-push-cantaloupe:
 
     name: Cantaloupe - build/push image
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -7,6 +7,7 @@ Meant to catch what a FastAPI / Starlette / pydantic upgrade could change silent
 
 import json
 import re
+from pathlib import Path
 
 import pytest
 from config import Config, app_config, celery_config
@@ -86,7 +87,7 @@ def test_static_files_are_served_from_the_static_directory(client):
     response = client.get("/static/css/main.css")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/css")
-    assert response.content == open("static/css/main.css", "rb").read()
+    assert response.content == Path("static/css/main.css").read_bytes()
     assert client.get("/static/css/missing.css").status_code == 404
 
 

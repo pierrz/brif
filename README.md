@@ -186,4 +186,4 @@ Run the tests, the way CI does (needs a Postgres, or docker to start one):
 bash scripts/test.sh
 ```
 
-Dependencies are pinned in `app/pyproject.toml` and locked in `app/uv.lock`, which both Docker images install (`uv export --no-dev`). To change a version, edit its pin, update the line of `constraint-dependencies` in the same file (they keep every transitive version as before the move from Poetry), then run `uv lock` in `app/` and commit `uv.lock`.
+Dependencies are pinned in `app/pyproject.toml` and locked in `app/uv.lock`, which both Docker images install (`uv export --no-dev`). To change a version, edit its pin, then run `uv lock` in `app/` and commit `uv.lock` (`uv lock --upgrade-package NAME` moves a transitive package).

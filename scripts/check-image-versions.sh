@@ -10,6 +10,8 @@
 # 2. every package that the Dockerfiles install (uv export --no-dev of app/uv.lock) and every
 #    '==' pin of app/pyproject.toml must be installed, once, at exactly that version.
 #    Packages of the base image that are not in the lock are not looked at.
+# 3. the two commands the cluster and docker-compose start, 'uvicorn' and 'celery', are on the PATH of the
+#    image and run (--version): a missing entry point or an import error at start-up shows here.
 # The first mismatch list ends the script with exit code 1.
 #
 # Needs docker and uv on the PATH (CI: astral-sh/setup-uv, same version as the Dockerfiles).
@@ -38,7 +40,7 @@ expected=$(
     sed -n '/^dependencies = \[/,/^\]/p' "$repo_root/app/pyproject.toml" | grep -oE '"[A-Za-z0-9_.-]+==[^"]+"' | tr -d '"'
 )
 
-# run in the image (python 3.8, pip's vendored 'packaging' evaluates the markers of the export)
+# run in the image (its own python 3.14, pip's vendored 'packaging' evaluates the markers of the export)
 check='
 import importlib.metadata as metadata
 import re
@@ -89,3 +91,8 @@ print(f"{checked} requirements (the lock and the pins of pyproject.toml) hold at
 '
 
 printf '%s\n' "$expected" | docker run --rm --interactive --workdir / --entrypoint python "$image" -c "$check"
+
+for command in uvicorn celery; do
+    printf '%s: ' "$command"
+    docker run --rm --workdir / --entrypoint "$command" "$image" --version
+done

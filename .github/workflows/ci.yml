@@ -66,9 +66,10 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           version: "0.13.5"
+          python-version: "3.14"
           enable-cache: false
 
-      # the very script to run locally: bash scripts/test.sh
+      # the very script to run locally: bash scripts/test.sh (Python 3.14, like the images)
       - name: Run the tests
         env:
           PGHOSTADDR: 127.0.0.1

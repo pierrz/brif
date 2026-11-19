@@ -3,7 +3,7 @@ name = "brif"
 version = "0.2.3"
 description = "Docker based tool to deploy IIIF platforms."
 authors = [{ name = "Pierre-Edouard Barrault" }]
-requires-python = ">=3.8,<3.9"   # pinned after fastapi docker image
+requires-python = ">=3.14,<3.15"   # the version of the Docker images (python:3.14-slim)
 dependencies = [
     "celery==5.5.3",
     "iiif-prezi==0.3.0",
@@ -12,10 +12,10 @@ dependencies = [
     "httpx==0.28.1",
     "Jinja2==3.1.6",
     "lxml==6.1.3",
-    "numpy==1.24.4",
-    "pydantic==2.10.6",
+    "numpy==2.5.5",
+    "pydantic==2.14.4",
     "pydantic-settings==2.8.1",
-    "psycopg2-binary==2.9.10",
+    "psycopg2-binary==2.9.13",
     "pytest==8.3.5",
     "requests==2.32.4",
     "setuptools==75.3.4",

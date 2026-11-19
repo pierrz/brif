@@ -103,7 +103,8 @@ def test_a_preflight_request_is_answered_for_any_method_and_header(client):
         },
     )
     assert response.status_code == 200
-    assert response.headers["access-control-allow-origin"] == "*"
+    # the origin is echoed (Starlette answered "*" before: a browser refuses "*" with credentials)
+    assert response.headers["access-control-allow-origin"] == "https://other.example"
     assert response.headers["access-control-allow-credentials"] == "true"
     assert response.headers["access-control-allow-headers"] == "x-whatever"
     assert "DELETE" in response.headers["access-control-allow-methods"]
@@ -184,19 +185,19 @@ def test_the_example_routes_redirect_to_a_manifest_of_the_dataset(
     api = f"/iiif/pres/{DATASET_DIR}"
     manifest_id = r"kokoelmat_fng_fi_app_si_(A_V_4460|N_1998_22|N_2010_68)"
 
-    data = client.get(f"{api}/manifest_api_example", allow_redirects=False)
+    data = client.get(f"{api}/manifest_api_example", follow_redirects=False)
     assert data.status_code == 307
     assert re.fullmatch(
         rf"/iiif/pres/{DATASET_DIR}/{manifest_id}/manifest.json", data.headers["location"]
     )
 
-    view = client.get(f"{api}/manifest_api_example_view", allow_redirects=False)
+    view = client.get(f"{api}/manifest_api_example_view", follow_redirects=False)
     assert view.status_code == 307
     assert re.fullmatch(
         rf"/iiif/pres/{DATASET_DIR}/{manifest_id}/view", view.headers["location"]
     )
 
-    image = client.get(f"{api}/image_api_example", allow_redirects=False)
+    image = client.get(f"{api}/image_api_example", follow_redirects=False)
     assert image.status_code == 307
     assert image.headers["location"].startswith(app_config.API_IIIF_IMAGE_PUBLIC)
     assert image.headers["location"].endswith("/full/full/0/default.jpg")

@@ -20,7 +20,7 @@ router = APIRouter(
 @router.get("/{dataset_name}/{manifest_id}/view", include_in_schema=False)
 async def manifest_viewer_tify(request: Request):
     return templates.TemplateResponse(
-        "viewer_tify.html", context={"request": request, "title": "Brif demo - Viewer"}
+        request, "viewer_tify.html", context={"title": "Brif demo - Viewer"}
     )
 
 

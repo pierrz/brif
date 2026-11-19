@@ -64,6 +64,7 @@ async def dashboard(request: Request):
     data = get_db_data(input_dataset_names)
 
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
-        context={"request": request, "data": data, "title": "Brif demo - Dashboard"},
+        context={"data": data, "title": "Brif demo - Dashboard"},
     )

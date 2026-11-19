@@ -37,7 +37,7 @@ def test_delete_allowed_dataset_succeeds(client, delete_task_calls):
     assert [d.fullname for d in get_db_data([fullname])] == [fullname]
 
     response = client.get(
-        "/task/delete_dataset/test_dataset/test_records.csv", allow_redirects=False
+        "/task/delete_dataset/test_dataset/test_records.csv", follow_redirects=False
     )
     assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
     assert response.headers["location"] == "/demo"

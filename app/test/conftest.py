@@ -116,19 +116,13 @@ def client() -> Generator:
 
 
 @pytest.fixture(scope="module")
-def page_client() -> Generator:
+def page_client(client) -> TestClient:
     """
-    A test client that can render the HTML pages. With Starlette 0.14.2 the test client announces
-    the 'http.response.template' extension, TemplateResponse then sends a message the
-    BaseHTTPMiddleware of main.py does not expect (AssertionError). A browser does not announce it:
-    the app is wrapped to do the same. Not needed with a newer Starlette.
+    The test client to render the HTML pages: the same one. With Starlette 0.14.2 it had to be wrapped
+    (the test client announced the 'http.response.template' extension and TemplateResponse then sent
+    a message the BaseHTTPMiddleware of main.py did not expect), a newer Starlette does not need it.
     """
-
-    async def without_extensions(scope, receive, send):
-        await app(dict(scope, extensions={}), receive, send)
-
-    with TestClient(without_extensions) as test_client:
-        yield test_client
+    return client
 
 
 @pytest.fixture

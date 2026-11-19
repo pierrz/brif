@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=invalid-name  # the file name is kebab-case, like the other scripts
 """
 Proof for INFRA-236 (Poetry -> uv): the move changes the tool and nothing else, so every package
 that uv installs must have exactly the version that Poetry locked.
@@ -133,9 +134,51 @@ def read_pyproject_constraints():
     return data.get("tool", {}).get("uv", {}).get("constraint-dependencies", [])
 
 
+def package_differences(old_versions, old_commits, new, new_commits):
+    """Differences between the old lock and the uv export, one line each."""
+    old = set(old_versions.items())
+    new_names = {name for name, _ in new}
+    lines = []
+    for name, version in sorted(old - new):
+        if name in new_names:
+            seen = ", ".join(sorted(v for n, v in new if n == name))
+            lines.append(f"version differs: {name} old {version}, uv {seen}")
+        else:
+            lines.append(
+                f"only in the old lock (uv does not install it): {name}=={version}"
+            )
+    for name, version in sorted(new - old):
+        if name not in old_versions:
+            lines.append(
+                f"only in uv (the old lock has no such package): {name}=={version}"
+            )
+    for name in sorted(set(old_commits) | set(new_commits)):
+        if old_commits.get(name) != new_commits.get(name):
+            lines.append(
+                f"git commit differs: {name} old {old_commits.get(name)}, "
+                f"uv {new_commits.get(name)}"
+            )
+    return lines
+
+
+def constraint_differences(derived, declared):
+    """Differences between the constraint list derived from the old lock and the one in pyproject."""
+    lines = [
+        f"constraint-dependencies lacks: {line}"
+        for line in sorted(set(derived) - set(declared))
+    ]
+    lines += [
+        f"constraint-dependencies has a line the old lock does not: {line}"
+        for line in sorted(set(declared) - set(derived))
+    ]
+    return lines
+
+
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--old-lock", help="a poetry.lock file (default: the one of OLD_REV)")
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n", maxsplit=1)[0])
+    parser.add_argument(
+        "--old-lock", help="a poetry.lock file (default: the one of OLD_REV)"
+    )
     parser.add_argument(
         "--constraints",
         action="store_true",
@@ -144,45 +187,22 @@ def main():
     args = parser.parse_args()
 
     old_versions, old_commits, written = read_old_lock(args.old_lock)
+    derived = constraints_from(old_versions, written)
     if args.constraints:
         print("constraint-dependencies = [")
-        for line in constraints_from(old_versions, written):
+        for line in derived:
             print(f'    "{line}",')
         print("]")
         return 0
 
-    old = set(old_versions.items())
     new, new_commits = read_export()
-    differences = []
-
-    new_names = {name for name, _ in new}
-    old_names = set(old_versions)
-    for name, version in sorted(old - new):
-        if name in new_names:
-            seen = sorted(v for n, v in new if n == name)
-            differences.append(f"version differs: {name} old {version}, uv {', '.join(seen)}")
-        else:
-            differences.append(f"only in the old lock (uv does not install it): {name}=={version}")
-    for name, version in sorted(new - old):
-        if name not in old_names:
-            differences.append(f"only in uv (the old lock has no such package): {name}=={version}")
-    for name in sorted(set(old_commits) | set(new_commits)):
-        if old_commits.get(name) != new_commits.get(name):
-            differences.append(
-                f"git commit differs: {name} old {old_commits.get(name)}, uv {new_commits.get(name)}"
-            )
-
-    derived = constraints_from(old_versions, written)
-    declared = read_pyproject_constraints()
-    for line in sorted(set(derived) - set(declared)):
-        differences.append(f"constraint-dependencies lacks: {line}")
-    for line in sorted(set(declared) - set(derived)):
-        differences.append(f"constraint-dependencies has a line the old lock does not: {line}")
+    differences = package_differences(old_versions, old_commits, new, new_commits)
+    differences += constraint_differences(derived, read_pyproject_constraints())
 
     for line in differences:
         print(line)
     print(
-        f"old lock: {len(old)} packages; uv export (all groups): {len(new)} packages; "
+        f"old lock: {len(old_versions)} packages; uv export (all groups): {len(new)} packages; "
         f"differences: {len(differences)}"
     )
     print("EQUAL" if not differences else "DIFFERENT")

@@ -86,7 +86,9 @@ class CantaloupeDouble:
             def do_GET(self):  # pylint: disable=invalid-name
                 double.requests.append(self.path)
                 match = IIIF_PATH.match(self.path)
-                image = double.images.get(unquote(match["quoted_id"])) if match else None
+                image = (
+                    double.images.get(unquote(match["quoted_id"])) if match else None
+                )
                 if image is None:
                     self._reply(404, {"error": "not found"})
                 else:

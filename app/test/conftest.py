@@ -59,7 +59,8 @@ for _name, _value in DB_DEFAULTS.items():
 from config import app_config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from main import app  # noqa: E402
-from src.db.database import close_db_connection, init_db_connection  # noqa: E402
+from src.db.database import (close_db_connection,  # noqa: E402
+                             init_db_connection)
 
 TEST_TIME_LIMIT_SECONDS = 60
 
@@ -111,6 +112,22 @@ def client() -> Generator:
     :return: the very client
     """
     with TestClient(app) as test_client:
+        yield test_client
+
+
+@pytest.fixture(scope="module")
+def page_client() -> Generator:
+    """
+    A test client that can render the HTML pages. With Starlette 0.14.2 the test client announces
+    the 'http.response.template' extension, TemplateResponse then sends a message the
+    BaseHTTPMiddleware of main.py does not expect (AssertionError). A browser does not announce it:
+    the app is wrapped to do the same. Not needed with a newer Starlette.
+    """
+
+    async def without_extensions(scope, receive, send):
+        await app(dict(scope, extensions={}), receive, send)
+
+    with TestClient(without_extensions) as test_client:
         yield test_client
 
 

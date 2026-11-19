@@ -20,7 +20,6 @@ dependencies = [
     "python-dotenv==0.19.2",
     "requests==2.32.4",
     "setuptools==75.3.4",
-    "typing==3.7.4.3",
     "typing_extensions==4.0.0",
 ]
 

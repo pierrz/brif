@@ -20,7 +20,6 @@ dependencies = [
     "python-dotenv==0.19.2",
     "requests==2.32.4",
     "setuptools==75.3.4",
-    "starlette-core",
     "typing==3.7.4.3",
     "typing_extensions==4.0.0",
 ]
@@ -33,11 +32,6 @@ dev = [
     "pre-commit==2.15.0",
     "pylint==2.11.1",
 ]
-
-# starlette-core has no release: the commit that app/poetry.lock locked on 'master'
-# (resolved_reference), so that the very same code is installed as before the move to uv
-[tool.uv.sources]
-starlette-core = { git = "https://github.com/accent-starlette/starlette-core", rev = "88e94be0cc65e457e32f2586a3c8860c6c08fca9" }
 
 [tool.pytest.ini_options]
 log_cli_level = "WARNING"

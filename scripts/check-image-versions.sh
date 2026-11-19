@@ -6,10 +6,10 @@
 #   bash scripts/check-image-versions.sh IMAGE      e.g. bash scripts/check-image-versions.sh brif_api_img
 #
 # Inside the image, with its own python:
-# 1. fastapi, pydantic, celery and starlette_core are imported and their versions printed;
+# 1. fastapi, starlette, pydantic and celery are imported and their versions printed;
 # 2. every package that the Dockerfiles install (uv export --no-dev of app/uv.lock) and every
-#    '==' pin of app/pyproject.toml must be installed, once, at exactly that version (starlette-core:
-#    at the locked commit). Packages of the base image that are not in the lock are not looked at.
+#    '==' pin of app/pyproject.toml must be installed, once, at exactly that version.
+#    Packages of the base image that are not in the lock are not looked at.
 # The first mismatch list ends the script with exit code 1.
 #
 # Needs docker and uv on the PATH (CI: astral-sh/setup-uv, same version as the Dockerfiles).
@@ -41,7 +41,6 @@ expected=$(
 # run in the image (python 3.8, pip's vendored 'packaging' evaluates the markers of the export)
 check='
 import importlib.metadata as metadata
-import json
 import re
 import sys
 
@@ -69,11 +68,7 @@ for line in sys.stdin.read().splitlines():
         problems.append(f"{req.name}: {len(dists)} installations found, expected 1")
         continue
     checked += 1
-    if req.url:
-        direct_url = json.loads(dists[0].read_text("direct_url.json") or "{}")
-        found, wanted = direct_url.get("vcs_info", {}).get("commit_id"), req.url.rsplit("@", 1)[1]
-    else:
-        found, wanted = dists[0].version, next(iter(req.specifier)).version
+    found, wanted = dists[0].version, next(iter(req.specifier)).version
     if found != wanted:
         problems.append(f"{req.name}: installed {found}, locked {wanted}")
 
@@ -84,12 +79,11 @@ if problems:
 import celery
 import fastapi
 import pydantic
-import starlette_core
+import starlette
 
-starlette_core_version = installed["starlette-core"][0].version
 print(
-    f"imports ok: fastapi {fastapi.__version__}, pydantic {pydantic.VERSION}, "
-    f"celery {celery.__version__}, {starlette_core.__name__} {starlette_core_version}"
+    f"imports ok: fastapi {fastapi.__version__}, starlette {starlette.__version__}, "
+    f"pydantic {pydantic.VERSION}, celery {celery.__version__}"
 )
 print(f"{checked} requirements (the lock and the pins of pyproject.toml) hold at exactly the locked version")
 '

@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 from config import Config, app_config, celery_config
-from main import app
 from src.libs.main_lib import load_json
+from src.routers import tasks as tasks_router
 from src.tasks.etl.task_etl_generate_manifests import generate_manifests
 from src.tasks.etl.task_etl_itemize import itemize
 
@@ -155,8 +155,6 @@ def test_answers_are_gzipped_when_the_client_accepts_it(client, data_dir):
 def test_a_flash_message_is_shown_on_the_next_page_once(
     page_client, data_dir, monkeypatch
 ):
-    from src.routers import tasks as tasks_router  # pylint: disable=import-outside-toplevel
-
     monkeypatch.setattr(tasks_router.delete_dataset_task, "delay", lambda *args: None)
 
     # the redirect to /demo is followed: the page of the redirect shows the message

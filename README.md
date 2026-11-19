@@ -173,9 +173,17 @@ Once processed, all manifests can be accessed with their base URI followed by `/
 <br>
 
 ### Development
-If you want to make some changes in this repo while following the same environment tooling.
+If you want to make some changes in this repo while following the same environment tooling ([uv](https://docs.astral.sh/uv/), 0.13.5 in the Docker images and in CI).
 ```
-poetry config virtualenvs.in-project true
-poetry install && poetry shell
+cd app && uv sync
+source .venv/bin/activate
 pre-commit install
 ```
+`uv sync` creates `app/.venv` (Python 3.8) with the exact versions of `app/uv.lock`, dev tools included. Use `.venv/bin/activate.fish` with fish.
+
+Run the tests, the way CI does (needs a Postgres, or docker to start one):
+```
+bash scripts/test.sh
+```
+
+Dependencies are pinned in `app/pyproject.toml` and locked in `app/uv.lock`, which both Docker images install (`uv export --no-dev`). To change a version, edit its pin, update the line of `constraint-dependencies` in the same file (they keep every transitive version as before the move from Poetry), then run `uv lock` in `app/` and commit `uv.lock`.

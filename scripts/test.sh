@@ -5,8 +5,9 @@
 #   bash scripts/test.sh [pytest arguments]      e.g. bash scripts/test.sh -k dashboard
 #
 # 1. Builds a Python 3.8 environment (the version of the Docker images) with uv, in ./.venv:
-#    the direct dependencies come from the exact pins of app/pyproject.toml, every other
-#    version from app/poetry.lock, as 'poetry install' does in the images. Poetry is not needed.
+#    'uv sync --locked --no-dev' installs app/uv.lock without the dev tools, the very package set
+#    of the Docker images (they install 'uv export --no-dev' of the same lock). --locked stops
+#    with an error when uv.lock is not in step with app/pyproject.toml.
 # 2. Needs a Postgres. If none answers on $PGHOSTADDR:$PGPORT and docker is available, a throwaway
 #    postgres:14.2 container (the version of setup/postgres) is started and removed at the end.
 #    It listens on the loopback only and trusts its clients, like the service container of CI.
@@ -46,32 +47,8 @@ if ! "$venv/bin/python" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 8))
     exit 1
 fi
 
-# direct pins (name==version lines of [tool.poetry.dependencies]), locked versions of everything,
-# and the git dependency (starlette-core) at the commit of the lock
-pins_dir=$venv/brif-pins
-mkdir -p "$pins_dir"
-awk '
-    /^\[tool\.poetry\.dependencies\]/ { in_deps = 1; next }
-    /^\[/ { in_deps = 0 }
-    in_deps && /^[A-Za-z0-9_.-]+ *= *"==/ { gsub(/"/, "", $3); gsub(/ /, "", $1); print $1 $3 }
-' "$repo_root/app/pyproject.toml" >"$pins_dir/direct.txt"
-awk -v constraints="$pins_dir/constraints.txt" -v git_deps="$pins_dir/git.txt" '
-    /^\[\[package\]\]/ { name = "" }
-    /^name = / { gsub(/"/, "", $3); name = $3 }
-    /^version = / { gsub(/"/, "", $3); if (name != "") version[name] = $3 }
-    /^url = / { gsub(/"/, "", $3); if (name != "") url[name] = $3 }
-    /^resolved_reference = / { gsub(/"/, "", $3); if (name != "") ref[name] = $3 }
-    END {
-        for (name in version) {
-            if (name in ref) print name " @ git+" url[name] "@" ref[name] >git_deps
-            else print name "==" version[name] >constraints
-        }
-    }
-' "$repo_root/app/poetry.lock"
-touch "$pins_dir/git.txt"
-
-uv pip install --quiet --python "$venv/bin/python" \
-    -r "$pins_dir/direct.txt" -r "$pins_dir/git.txt" -c "$pins_dir/constraints.txt"
+# uv sync is exact: whatever is not in the lock is removed from the environment
+UV_PROJECT_ENVIRONMENT=$venv uv sync --project "$repo_root/app" --python 3.8 --locked --no-dev
 
 # ---------------------------------------------------------------- 2. Postgres
 

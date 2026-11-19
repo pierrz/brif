@@ -114,6 +114,8 @@ jobs:
           context: .
           file: setup/app/Dockerfile
           push: ${{ env.PUSH_IMAGES == 'true' }}
+          # not pushed (pull requests): keep the image in the local daemon, to check it below
+          load: ${{ env.PUSH_IMAGES != 'true' }}
           tags: |
             ${{ env.REGISTRY }}/pierrz/brif-backend:latest
             ${{ env.REGISTRY }}/pierrz/brif-backend:${{ github.sha }}
@@ -125,6 +127,38 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           echo "- backend: \`${REGISTRY}/pierrz/brif-backend@${DIGEST}\` (tags \`latest\`, \`${GITHUB_SHA}\`)" >> "$GITHUB_STEP_SUMMARY"
+
+      # Images are only built here, so a pull request checks what it built: the versions in the
+      # image must be those of app/uv.lock and of the pins of app/pyproject.toml (see the script)
+      - name: Install uv
+        if: env.PUSH_IMAGES != 'true'
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          enable-cache: false
+
+      - name: Check the versions inside the backend image
+        if: env.PUSH_IMAGES != 'true'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/pierrz/brif-backend:${{ github.sha }}
+        run: bash scripts/check-image-versions.sh "$IMAGE"
+
+      # setup/celery/Dockerfile is only used by docker-compose: built here, not pushed, to check it
+      - name: Build the celery image (not pushed)
+        if: env.PUSH_IMAGES != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: setup/celery/Dockerfile
+          push: false
+          load: true
+          tags: brif-celery-check:${{ github.sha }}
+
+      - name: Check the versions inside the celery image
+        if: env.PUSH_IMAGES != 'true'
+        env:
+          IMAGE: brif-celery-check:${{ github.sha }}
+        run: bash scripts/check-image-versions.sh "$IMAGE"
 
   build-and-push-cantaloupe:
 

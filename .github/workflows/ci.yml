@@ -13,6 +13,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  # images are only pushed from main: pull request builds used to overwrite ':latest'
+  PUSH_IMAGES: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
 jobs:
 
@@ -106,15 +108,23 @@ jobs:
           images: ${{ env.REGISTRY }}/pierrz/brif-backend
 
       - name: Build and push backend image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: setup/app/Dockerfile
-          push: true
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           tags: |
             ${{ env.REGISTRY }}/pierrz/brif-backend:latest
             ${{ env.REGISTRY }}/pierrz/brif-backend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Show the pushed image digest in the job summary
+        if: env.PUSH_IMAGES == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo "- backend: \`${REGISTRY}/pierrz/brif-backend@${DIGEST}\` (tags \`latest\`, \`${GITHUB_SHA}\`)" >> "$GITHUB_STEP_SUMMARY"
 
   build-and-push-cantaloupe:
 
@@ -148,12 +158,20 @@ jobs:
           images: ${{ env.REGISTRY }}/pierrz/brif-cantaloupe
 
       - name: Build and push cantaloupe image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: setup/cantaloupe/Dockerfile
-          push: true
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           tags: |
             ${{ env.REGISTRY }}/pierrz/brif-cantaloupe:latest
             ${{ env.REGISTRY }}/pierrz/brif-cantaloupe:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Show the pushed image digest in the job summary
+        if: env.PUSH_IMAGES == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo "- cantaloupe: \`${REGISTRY}/pierrz/brif-cantaloupe@${DIGEST}\` (tags \`latest\`, \`${GITHUB_SHA}\`)" >> "$GITHUB_STEP_SUMMARY"

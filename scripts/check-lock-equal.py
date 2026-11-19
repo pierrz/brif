@@ -37,7 +37,7 @@ except ModuleNotFoundError:
 
 REPO = Path(__file__).resolve().parents[1]
 APP = REPO / "app"
-# last commit of main with app/poetry.lock (parent of the commit that adds uv.lock)
+# a commit of main that still has app/poetry.lock (INFRA-235, before this migration)
 OLD_REV = "2c82c6f"
 
 

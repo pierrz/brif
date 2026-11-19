@@ -17,7 +17,7 @@ dependencies = [
     "pydantic-settings==2.8.1",
     "psycopg2-binary==2.9.13",
     "pytest==8.3.5",
-    "requests==2.32.4",
+    "requests==2.34.2",
     "starlette==1.10.0",
 ]
 

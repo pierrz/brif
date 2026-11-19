@@ -22,8 +22,10 @@ RUN cd /tmp \
     && mv "cantaloupe-${CANTALOUPE_VERSION}/cantaloupe-${CANTALOUPE_VERSION}.jar" /cantaloupe/cantaloupe.jar \
     && rm -rf /tmp/cantaloupe-*
 
-# 5.0.8 writes no log with its own logback.xml (see the file): ours is upstream's fix
-COPY ./setup/cantaloupe/logback.xml /cantaloupe/logback.xml
+# 5.0.8 writes no log with the logback.xml inside its jar (see the file). Cantaloupe re-reads logback.xml from the CLASSPATH
+# once it has started, so pointing the JVM at another file (-Dlogback.configurationFile) is not enough: ours goes first on the
+# classpath, in front of the jar, and is therefore the one both the first and the second configuration use.
+COPY ./setup/cantaloupe/logback.xml /cantaloupe/conf/logback.xml
 
 # load test images
 # COPY ./setup/cantaloupe/test_images.zip .
@@ -34,4 +36,4 @@ COPY ./setup/cantaloupe/logback.xml /cantaloupe/logback.xml
 # cantaloupe.properties is mounted at runtime via k8s ConfigMap
 # If running locally, mount or COPY the file manually
 WORKDIR /cantaloupe
-CMD ["java", "-Dcantaloupe.config=/cantaloupe/cantaloupe.properties", "-Dlogback.configurationFile=/cantaloupe/logback.xml", "-Xmx2g", "-jar", "/cantaloupe/cantaloupe.jar"]
+CMD ["java", "-Dcantaloupe.config=/cantaloupe/cantaloupe.properties", "-Xmx2g", "-cp", "/cantaloupe/conf:/cantaloupe/cantaloupe.jar", "edu.illinois.library.cantaloupe.StandaloneEntry"]

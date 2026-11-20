@@ -105,9 +105,10 @@ def test_the_forwarded_protocol_makes_the_links_of_the_pages_https(
 
 def test_every_origin_may_read_the_api(client):
     response = client.get("/test/api_live", headers={"Origin": "https://other.example"})
-    # the origin is echoed (Starlette answered "*" before: a browser refuses "*" with credentials)
-    assert response.headers["access-control-allow-origin"] == "https://other.example"
-    assert response.headers["access-control-allow-credentials"] == "true"
+    # "*", without credentials: Starlette 1 would echo the origin and allow credentials with allow_credentials=True,
+    # which the app does not want (nothing here authenticates with a cookie)
+    assert response.headers["access-control-allow-origin"] == "*"
+    assert "access-control-allow-credentials" not in response.headers
 
 
 def test_a_preflight_request_is_answered_for_any_method_and_header(client):
@@ -120,8 +121,8 @@ def test_a_preflight_request_is_answered_for_any_method_and_header(client):
         },
     )
     assert response.status_code == 200
-    assert response.headers["access-control-allow-origin"] == "https://other.example"
-    assert response.headers["access-control-allow-credentials"] == "true"
+    assert response.headers["access-control-allow-origin"] == "*"
+    assert "access-control-allow-credentials" not in response.headers
     assert response.headers["access-control-allow-headers"] == "x-whatever"
     assert "DELETE" in response.headers["access-control-allow-methods"]
 

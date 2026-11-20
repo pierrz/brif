@@ -48,7 +48,10 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    # No credentials: "*" is listed on purpose (every origin may read the API) and nothing here authenticates with a cookie.
+    # Starlette 1 answers "*" + credentials by echoing the caller's origin, which would make credentialed cross-origin calls work;
+    # Starlette 0.14 sent "*" and browsers refused it with credentials, so this keeps what a browser could do before.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

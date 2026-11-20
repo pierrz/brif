@@ -102,7 +102,7 @@ def test_load_results_to_db_replaces_the_previous_results():
     Last step of the pipeline: it can be run again on a dataset already in the dashboard
     """
     load_input_dataset(an_input_dataset(total=3))
-    results = a_transformed_dataset().dict()
+    results = a_transformed_dataset().model_dump()
     load_results_to_db(results)
     load_results_to_db(results)
     [stored] = get_db_data([FULLNAME])

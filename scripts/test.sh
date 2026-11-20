@@ -4,7 +4,7 @@
 #
 #   bash scripts/test.sh [pytest arguments]      e.g. bash scripts/test.sh -k dashboard
 #
-# 1. Builds a Python 3.8 environment (the version of the Docker images) with uv, in ./.venv:
+# 1. Builds a Python 3.14 environment (the version of the Docker images) with uv, in ./.venv:
 #    'uv sync --locked --no-dev' installs app/uv.lock without the dev tools, the very package set
 #    of the Docker images (they install 'uv export --no-dev' of the same lock). --locked stops
 #    with an error when uv.lock is not in step with app/pyproject.toml.
@@ -40,15 +40,15 @@ command -v uv >/dev/null || {
 # ---------------------------------------------------------------- 1. environment
 
 if [ ! -x "$venv/bin/python" ]; then
-    uv venv --python 3.8 "$venv"
+    uv venv --python 3.14 "$venv"
 fi
-if ! "$venv/bin/python" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 8))'; then
-    echo "$venv is not a Python 3.8 environment: remove it, or point BRIF_TEST_VENV elsewhere." >&2
+if ! "$venv/bin/python" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 14))'; then
+    echo "$venv is not a Python 3.14 environment: remove it, or point BRIF_TEST_VENV elsewhere." >&2
     exit 1
 fi
 
 # uv sync is exact: whatever is not in the lock is removed from the environment
-UV_PROJECT_ENVIRONMENT=$venv uv sync --project "$repo_root/app" --python 3.8 --locked --no-dev
+UV_PROJECT_ENVIRONMENT=$venv uv sync --project "$repo_root/app" --python 3.14 --locked --no-dev
 
 # ---------------------------------------------------------------- 2. Postgres
 

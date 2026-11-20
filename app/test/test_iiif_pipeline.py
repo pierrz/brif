@@ -118,7 +118,7 @@ def test_images_missing_on_the_image_server_are_skipped(sample_dataset, cantalou
 def test_processing_a_dataset_through_the_endpoint_fills_the_dashboard_and_the_api(
     client, sample_dataset, cantaloupe, celery_worker
 ):
-    response = client.get(f"/task/process_dataset/{FULLNAME}", allow_redirects=False)
+    response = client.get(f"/task/process_dataset/{FULLNAME}", follow_redirects=False)
     assert response.headers["location"] == "/demo"
 
     processed = wait_for_status("processed")

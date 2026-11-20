@@ -179,11 +179,13 @@ cd app && uv sync
 source .venv/bin/activate
 pre-commit install
 ```
-`uv sync` creates `app/.venv` (Python 3.8) with the exact versions of `app/uv.lock`, dev tools included. Use `.venv/bin/activate.fish` with fish.
+`uv sync` creates `app/.venv` (Python 3.14, the version of the Docker images; uv downloads it if the machine has none) with the exact versions of `app/uv.lock`, dev tools included. Use `.venv/bin/activate.fish` with fish.
 
 Run the tests, the way CI does (needs a Postgres, or docker to start one):
 ```
 bash scripts/test.sh
 ```
 
-Dependencies are pinned in `app/pyproject.toml` and locked in `app/uv.lock`, which both Docker images install (`uv export --no-dev`). To change a version, edit its pin, update the line of `constraint-dependencies` in the same file (they keep every transitive version as before the move from Poetry), then run `uv lock` in `app/` and commit `uv.lock`.
+Dependencies are pinned in `app/pyproject.toml` and locked in `app/uv.lock`, which both Docker images install (`uv export --no-dev`). To change a version, edit its pin, then run `uv lock` in `app/` and commit `uv.lock` (`uv lock --upgrade-package NAME` moves a transitive package, `uv lock --upgrade` all of them).
+
+Both Docker images start from `python:3.14-slim`, pinned by digest in [setup/app/Dockerfile](setup/app/Dockerfile) and [setup/celery/Dockerfile](setup/celery/Dockerfile); to move to a newer Python patch release, read the digest of the tag again (`docker buildx imagetools inspect python:3.14-slim`) and change it in both files. The API runs with `uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers` (the default command of the backend image), the worker with `celery --app=worker.celery worker --loglevel=info`. A change to the Python minor version also changes `requires-python` in `app/pyproject.toml`, the `--python` of [scripts/test.sh](scripts/test.sh) and `python-version` of [CI](.github/workflows/ci.yml).

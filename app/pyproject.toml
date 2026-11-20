@@ -3,125 +3,32 @@ name = "brif"
 version = "0.2.3"
 description = "Docker based tool to deploy IIIF platforms."
 authors = [{ name = "Pierre-Edouard Barrault" }]
-requires-python = ">=3.8,<3.9"   # pinned after fastapi docker image
+requires-python = ">=3.14,<3.15"   # the version of the Docker images (python:3.14-slim)
 dependencies = [
-    "aiofiles==0.7.0",
-    "anyio==3.4.0",
-    "celery==5.2.0",
+    "celery==5.7.0",
     "iiif-prezi==0.3.0",
-    "itsdangerous==2.0.1",
-    "fastapi==0.68.1",
-    "Jinja2==3.0.3",
-    "numpy==1.21.4",
-    "pydantic==1.8.2",
-    "psycopg2-binary==2.9.2",
-    "pytest==6.2.5",
-    "python-dotenv==0.19.2",
-    "requests==2.26.0",
-    "setuptools==57.5.0",
-    "starlette-core",
-    "typing==3.7.4.3",
-    "typing_extensions==4.0.0",
+    "itsdangerous==2.2.0",
+    "fastapi==0.165.0",
+    "httpx2==2.16.2",
+    "Jinja2==3.1.6",
+    "lxml==6.1.3",
+    "numpy==2.5.5",
+    "pydantic==2.14.4",
+    "pydantic-settings==2.16.3",
+    "psycopg2-binary==2.9.13",
+    "pytest==9.2.0",
+    "requests==2.34.2",
+    "starlette==1.10.0",
+    "uvicorn[standard]==0.54.0",
 ]
 
 [dependency-groups]
 dev = [
-    "black==21.10b0",
-    "flake8==4.0.1",
-    "isort==5.10.1",
-    "pre-commit==2.15.0",
-    "pylint==2.11.1",
-]
-
-# starlette-core has no release: the commit that app/poetry.lock locked on 'master'
-# (resolved_reference), so that the very same code is installed as before the move to uv
-[tool.uv.sources]
-starlette-core = { git = "https://github.com/accent-starlette/starlette-core", rev = "88e94be0cc65e457e32f2586a3c8860c6c08fca9" }
-
-[tool.uv]
-# The move from Poetry to uv (INFRA-236) changes the tool and nothing else: name==version of every
-# package of the former app/poetry.lock, direct and transitive, so that uv.lock cannot resolve to
-# anything else. Derived with 'python3 scripts/check-lock-equal.py --constraints'. A constraint does
-# not install a package by itself. Drop the list when the dependencies are upgraded (INFRA-227).
-constraint-dependencies = [
-    "aiofiles==0.7.0",
-    "amqp==5.0.6",
-    "anyio==3.4.0",
-    "astroid==2.8.6",
-    "atomicwrites==1.4.0",
-    "attrs==21.2.0",
-    "backports.entry-points-selectable==1.1.1",
-    "billiard==3.6.4.0",
-    "black==21.10b0",
-    "cachetools==4.2.4",
-    "celery==5.2.0",
-    "certifi==2021.10.8",
-    "cfgv==3.3.1",
-    "charset-normalizer==2.0.8",
-    "click==8.0.3",
-    "click-didyoumean==0.3.0",
-    "click-plugins==1.1.1",
-    "click-repl==0.2.0",
-    "colorama==0.4.4",
-    "distlib==0.3.3",
-    "fastapi==0.68.1",
-    "filelock==3.4.0",
-    "flake8==4.0.1",
-    "frozendict==2.1.0",
-    "greenlet==1.1.2",
-    "identify==2.4.0",
-    "idna==3.3",
-    "iiif-prezi==0.3.0",
-    "iniconfig==1.1.1",
-    "isort==5.10.1",
-    "itsdangerous==2.0.1",
-    "jinja2==3.0.3",
-    "kombu==5.2.2",
-    "lazy-object-proxy==1.6.0",
-    "lxml==4.6.4",
-    "markupsafe==2.0.1",
-    "mccabe==0.6.1",
-    "mypy-extensions==0.4.3",
-    "nodeenv==1.6.0",
-    "numpy==1.21.4",
-    "packaging==20.9",
-    "pathspec==0.9.0",
-    "pillow==8.4.0",
-    "platformdirs==2.4.0",
-    "pluggy==1.0.0",
-    "pre-commit==2.15.0",
-    "prompt-toolkit==3.0.22",
-    "psycopg2-binary==2.9.2",
-    "py==1.11.0",
-    "pycodestyle==2.8.0",
-    "pydantic==1.8.2",
-    "pyflakes==2.4.0",
-    "pyld==2.0.3",
-    "pylint==2.11.1",
-    "pyparsing==3.0.6",
-    "pytest==6.2.5",
-    "python-dotenv==0.19.2",
-    "pytz==2021.3",
-    "pyyaml==6.0",
-    "regex==2021.11.10",
-    "requests==2.26.0",
-    "setuptools==57.5.0",
-    "six==1.16.0",
-    "sniffio==1.3.1",
-    "sqlalchemy==1.4.27",
-    "sqlalchemy-utils==0.37.9",
-    "starlette==0.14.2",
-    "starlette-core==0.0.1",
-    "toml==0.10.2",
-    "tomli==1.2.2",
-    "typing==3.7.4.3",
-    "typing-extensions==4.0.0",
-    "urllib3==1.26.7",
-    "vine==5.0.0",
-    "virtualenv==20.10.0",
-    "wcwidth==0.2.5",
-    "wrapt==1.13.3",
-    "wtforms==2.3.3",
+    "black==26.10.1",
+    "flake8==7.5.0",
+    "isort==9.0.2",
+    "pre-commit==4.7.0",
+    "pylint==4.1.4",
 ]
 
 [tool.pytest.ini_options]
@@ -129,6 +36,4 @@ log_cli_level = "WARNING"
 filterwarnings = [
     "error",
     "ignore::UserWarning",
-    # TODO: remove once Jinja is updated
-    "ignore:'contextfunction' is renamed to 'pass_context', the old name will be removed in Jinja 3.1.:DeprecationWarning",
 ]

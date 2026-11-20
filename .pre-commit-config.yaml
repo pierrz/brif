@@ -1,23 +1,24 @@
 repos:
 
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v6.0.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
 
 -   repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
+    rev: 7.5.0
     hooks:
     -   id: flake8
 
--   repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.9.3
+# the former 'mirrors-isort' repository is archived
+-   repo: https://github.com/PyCQA/isort
+    rev: 9.0.2
     hooks:
     -   id: isort
 
--   repo: https://github.com/pycqa/pylint
-    rev: v2.11.1
+-   repo: https://github.com/pylint-dev/pylint
+    rev: v4.1.4
     hooks:
     -   id: pylint

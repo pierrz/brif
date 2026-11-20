@@ -28,6 +28,7 @@ Overall, it's mostly a matter of dependencies to update and some `Dockerfiles` t
     - [Data](#data)
 - [Test](#test)
 - [Run](#run)
+- [Kubernetes](#kubernetes)
 - [Manual](#manual)
   - [Notes](#notes)
   - [Data and images sample](#data-and-images-sample)
@@ -123,6 +124,11 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up
 Docker is great but sometimes tricky ... when changes are made, don't forget to:
 - Use the `--build` flag.
 - Cleanse the database properly by using the `prune` and `rm` tools to purge volumes and containers.
+
+<br>
+
+### Kubernetes
+[deploy/k8s](deploy/k8s) is a small, generic example to run the API, the Celery worker, PostgreSQL, RabbitMQ and Cantaloupe on any Kubernetes cluster (plain YAML and Kustomize, no docker compose). Its [README](deploy/k8s/README.md) explains what is in it, what is left out, and how to apply it.
 
 <br>
 

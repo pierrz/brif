@@ -1,0 +1,109 @@
+# The brif API (FastAPI): one Deployment, one Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: brif
+spec:
+  selector:
+    app.kubernetes.io/name: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: brif
+spec:
+  replicas: 1
+  # The data claim is ReadWriteOnce: a rolling update would run two pods on it for a while.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/part-of: brif
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      # The API connects to the database when it starts (it creates its 'dashboard' table): wait until the database answers.
+      initContainers:
+        - name: wait-for-db
+          # A real deployment pins tag@digest, see the README.
+          image: busybox:1.38
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "until nc -z db 5432; do echo waiting for db; sleep 2; done"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+      containers:
+        - name: backend
+          # Built from setup/app/Dockerfile by the CI of the repository, tagged with the commit it was built from.
+          # A real deployment pins tag@digest, see the README. The worker (celery.yaml) runs the same image.
+          image: ghcr.io/pierrz/brif-backend:020da48013e9c61676b9b3911d4d0c8285d9de27
+          imagePullPolicy: IfNotPresent
+          command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: brif-config
+          # Only what the API reads: not the superuser password of the database, not the one of RabbitMQ.
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: DB_PASSWORD
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: SECRET_KEY
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: CELERY_BROKER_URL
+          # The Swagger UI: it answers once the application is up, whatever the data.
+          readinessProbe:
+            httpGet:
+              path: /docs
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: brif-data

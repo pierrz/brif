@@ -1,0 +1,46 @@
+# OPTIONAL, an example only: a plain Ingress for the API and for Cantaloupe, with example.org host names.
+# Nothing here is specific to a controller or to a certificate tool. Before you use it:
+#   - replace example.org (it has to be the BASE_URL of configmap.yaml: brif.<BASE_URL> and cantaloupe.<BASE_URL>),
+#   - set ingressClassName to the class of your Ingress controller (nginx is an example),
+#   - create the TLS Secret (or let your certificate tool create it) and keep the tls blocks, or delete them for plain HTTP.
+# The API has no login: its '/delete_dataset/...' and '/process_dataset/...' routes act on a plain GET. Put an
+# authentication in front of the API host (at the Ingress controller, or a VPN) unless you only expose it on a private network.
+# Only the manifests and the viewer (brif.<BASE_URL>/<dataset>/...) and the images (cantaloupe.<BASE_URL>) are meant to be public.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: brif
+  namespace: brif
+  labels:
+    app.kubernetes.io/name: brif
+    app.kubernetes.io/part-of: brif
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - brif.example.org
+      secretName: brif-example-org-tls
+    - hosts:
+        - cantaloupe.example.org
+      secretName: cantaloupe-example-org-tls
+  rules:
+    - host: brif.example.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  name: http
+    - host: cantaloupe.example.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cantaloupe
+                port:
+                  name: http

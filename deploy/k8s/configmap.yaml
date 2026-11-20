@@ -1,0 +1,33 @@
+# Settings that are not secret, read by the API, the worker and (DB_NAME, DB_USER) the database init script.
+# The variable names are the ones app/config.py reads. Passwords and keys are in secret.yaml.example.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: brif-config
+  labels:
+    app.kubernetes.io/name: brif-config
+    app.kubernetes.io/part-of: brif
+data:
+  # Name of the application database and of its owner role: created by the init script of postgres.yaml
+  # (DB_NAME must not be 'postgres', that one is the maintenance database).
+  DB_NAME: brif
+  DB_USER: brif
+
+  # The public URLs written into the IIIF manifests are built from these two values (app/config.py):
+  #   API (manifests, viewer)  https://<APP_SUBDOMAIN>.<BASE_URL>      here https://brif.example.org
+  #   Cantaloupe (images)      https://cantaloupe.<BASE_URL>/iiif/2/   here https://cantaloupe.example.org/iiif/2/
+  # Change them to your own domain before you generate manifests. Nothing else in the example uses them.
+  BASE_URL: example.org
+  APP_SUBDOMAIN: brif
+
+  # Where the API and the worker reach Cantaloupe inside the cluster (the Service of cantaloupe.yaml).
+  # Keep the trailing slash: the code appends 'iiif/2/'.
+  API_IMAGE_BACKEND: http://cantaloupe:8182/
+
+  # The results of the tasks travel back through the broker ('rpc'): nothing else to run. The broker URL itself holds
+  # the RabbitMQ password, so it is in the Secret.
+  CELERY_RESULT_BACKEND: rpc://
+
+  # Input datasets are read from DATA_DIR/input and manifests written to DATA_DIR/output.
+  # Mounted from the claim brif-data (data.yaml) in the API and in the worker; this is also the default of app/config.py.
+  DATA_DIR: /opt/data

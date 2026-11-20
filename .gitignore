@@ -147,3 +147,6 @@ cantaloupe.properties
 data/output
 data/input/*
 !data/input/test_dataset
+
+# Kubernetes example: the filled-in copy of deploy/k8s/secret.yaml.example
+deploy/k8s/secret.yaml

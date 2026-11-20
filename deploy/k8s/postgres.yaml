@@ -1,0 +1,149 @@
+# PostgreSQL for brif: one StatefulSet, one Service called 'db'.
+# The Service must be called 'db': the host name is written in the code (app/src/db/database.py).
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: brif
+spec:
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+---
+# Adapted from setup/postgres/docker-entrypoint-initdb.d/init-postgres.sh. The official image runs every script of
+# /docker-entrypoint-initdb.d once, on an empty data directory (the first start), and never again.
+# What changed: the application role OWNS its database (from PostgreSQL 15 on only the owner may create tables in schema
+# public, and brif creates its 'dashboard' table there at startup), the postgres database is kept, and the password is read
+# from the environment inside psql instead of being written into the SQL text.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: brif
+data:
+  init-brif.sh: |
+    #!/bin/sh
+    set -eu
+    psql -X -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
+    \getenv app_user DB_USER
+    \getenv app_password DB_PASSWORD
+    \getenv app_db DB_NAME
+    -- CREATE ROLE carries the password: keep the statement out of psql's messages and of the server log if it fails.
+    \set VERBOSITY terse
+    SET log_min_error_statement = panic;
+
+    SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_password')
+     WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'app_user') \gexec
+
+    SELECT format('CREATE DATABASE %I OWNER %I', :'app_db', :'app_user')
+     WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'app_db') \gexec
+
+    ALTER DATABASE :"app_db" OWNER TO :"app_user";
+    EOSQL
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: brif
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: brif
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          # A real deployment pins tag@digest, see the README. 17.x is a minor tag: it moves with every release.
+          image: postgres:17.12-bookworm
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgresql
+              containerPort: 5432
+          env:
+            # A sub-directory of the volume: a freshly formatted volume has a lost+found directory at its root,
+            # and initdb refuses a data directory that is not empty.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            # Maintenance login, used by the init script and never by the application.
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: POSTGRES_PASSWORD
+            # What the init script creates: the application role and its database.
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: brif-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: brif-config
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: DB_PASSWORD
+          # Ready only when the final server listens on TCP: the temporary server of the first start (init scripts) does not.
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER"']
+            periodSeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: postgres-init-scripts
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: postgres
+          app.kubernetes.io/part-of: brif
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        # No storageClassName: the default class of your cluster. Set one here to use another.
+        resources:
+          requests:
+            storage: 10Gi

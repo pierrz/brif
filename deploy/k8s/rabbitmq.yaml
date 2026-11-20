@@ -1,0 +1,95 @@
+# RabbitMQ, the Celery broker: one StatefulSet, one Service called 'rabbitmq'.
+# A StatefulSet and not a Deployment on purpose: RabbitMQ keeps its data under a directory named after the host name of the
+# pod, and only a StatefulSet pod keeps its name (rabbitmq-0) when it is recreated. With another name the broker would start
+# empty and leave the data of the volume unused.
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  labels:
+    app.kubernetes.io/name: rabbitmq
+    app.kubernetes.io/part-of: brif
+spec:
+  selector:
+    app.kubernetes.io/name: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp
+    # The management UI and API (the '-management' image). Reach it with kubectl port-forward, see the README.
+    - name: management
+      port: 15672
+      targetPort: management
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  labels:
+    app.kubernetes.io/name: rabbitmq
+    app.kubernetes.io/part-of: brif
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rabbitmq
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rabbitmq
+        app.kubernetes.io/part-of: brif
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: rabbitmq
+          # A real deployment pins tag@digest, see the README.
+          image: rabbitmq:4.4.1-management
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+          env:
+            # The user and password are created on the first start (empty volume) and kept in the volume after that.
+            # They must match CELERY_BROKER_URL in secret.yaml.
+            - name: RABBITMQ_DEFAULT_USER
+              value: brif
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: RABBITMQ_DEFAULT_PASS
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: rabbitmq
+          app.kubernetes.io/part-of: brif
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        # No storageClassName: the default class of your cluster. Set one here to use another.
+        resources:
+          requests:
+            storage: 5Gi

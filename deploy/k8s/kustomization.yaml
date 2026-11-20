@@ -1,0 +1,37 @@
+# The brif example for Kubernetes: kubectl apply -k deploy/k8s   (README.md first: the Secret is applied before this)
+# Render without applying anything: kubectl kustomize deploy/k8s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: brif
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - data.yaml
+  - postgres.yaml
+  - rabbitmq.yaml
+  - cantaloupe.yaml
+  - backend.yaml
+  - celery.yaml
+  # secret.yaml is not listed on purpose: it holds the real values, it is applied by itself and never rendered or committed.
+  # optional/flower.yaml and optional/ingress.yaml are not listed: they are applied by themselves (README.md)
+
+# Images are written as name:tag in the manifests. To pin them by digest without editing the manifests, uncomment this block
+# and fill in the digests (the README tells where to read them); kustomize then renders name:tag@digest.
+#images:
+#  - name: ghcr.io/pierrz/brif-backend
+#    newTag: 020da48013e9c61676b9b3911d4d0c8285d9de27
+#    digest: sha256:<digest of that tag>
+#  - name: ghcr.io/pierrz/brif-cantaloupe
+#    newTag: edaf8aa3a1f48c86d277908f76cd278e674eaa26
+#    digest: sha256:<digest of that tag>
+#  - name: postgres
+#    newTag: 17.12-bookworm
+#    digest: sha256:<digest of that tag>
+#  - name: rabbitmq
+#    newTag: 4.4.1-management
+#    digest: sha256:<digest of that tag>
+#  - name: busybox
+#    newTag: "1.38"
+#    digest: sha256:<digest of that tag>

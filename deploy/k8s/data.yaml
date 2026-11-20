@@ -1,0 +1,21 @@
+# The data directory of brif, shared by the API and the worker (both mount it at /opt/data, see DATA_DIR in configmap.yaml):
+#   input/<dataset directory>/...   the datasets you add: CSV files and an optional mapping.json
+#   output/<dataset directory>/...  what the pipeline writes: the split records and the IIIF manifests that the API serves
+# Keep the originals of your datasets elsewhere: output/ can be generated again from input/, but input/ only lives here.
+#
+# ReadWriteOnce: the API and the worker must run on the same node, which celery.yaml asks for. With a storage class that
+# offers ReadWriteMany (NFS, CephFS, ...) switch the mode here and drop the podAffinity of celery.yaml.
+# No storageClassName: the default class of your cluster is used. Set one if you want another.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: brif-data
+  labels:
+    app.kubernetes.io/name: brif-data
+    app.kubernetes.io/part-of: brif
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

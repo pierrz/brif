@@ -1,0 +1,100 @@
+# The Celery worker: it runs the pipeline tasks (itemize, load into the database, generate the manifests).
+# The same image as the API (the image has both), with another command. It listens to nothing: no Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+  labels:
+    app.kubernetes.io/name: celery
+    app.kubernetes.io/part-of: brif
+spec:
+  replicas: 1
+  # The data claim is ReadWriteOnce: a rolling update would run two pods on it for a while.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: celery
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: celery
+        app.kubernetes.io/part-of: brif
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      # The worker shares the data claim with the API. A ReadWriteOnce claim is mounted from one node only, so the worker is
+      # placed on the node of the API. On a single-node cluster this changes nothing. With a ReadWriteMany claim (see data.yaml)
+      # delete this block.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: backend
+      initContainers:
+        - name: wait-for-rabbitmq
+          # A real deployment pins tag@digest, see the README.
+          image: busybox:1.38
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+        - name: wait-for-db
+          image: busybox:1.38
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "until nc -z db 5432; do echo waiting for db; sleep 2; done"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+      containers:
+        - name: celery
+          # The same image as the API, see backend.yaml. A real deployment pins tag@digest, see the README.
+          image: ghcr.io/pierrz/brif-backend:020da48013e9c61676b9b3911d4d0c8285d9de27
+          imagePullPolicy: IfNotPresent
+          # Celery starts one child process per CPU of the node by default: add --concurrency=N to start N.
+          command: ["celery", "--app=worker.celery", "worker", "--loglevel=info"]
+          envFrom:
+            - configMapRef:
+                name: brif-config
+          # Only what the worker reads (no SECRET_KEY: that one signs the cookies of the API).
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: DB_PASSWORD
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: CELERY_BROKER_URL
+          # No probe: the worker has no port. Its health is in the logs ('celery@... ready.') and in Flower (optional/flower.yaml).
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: brif-data

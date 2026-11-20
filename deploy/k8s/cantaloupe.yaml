@@ -1,0 +1,228 @@
+# Cantaloupe, the IIIF image server: one Deployment, one Service, two claims and the properties file as a ConfigMap.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cantaloupe
+  labels:
+    app.kubernetes.io/name: cantaloupe
+    app.kubernetes.io/part-of: brif
+spec:
+  selector:
+    app.kubernetes.io/name: cantaloupe
+  ports:
+    - name: http
+      port: 8182
+      targetPort: http
+---
+# The source images. Cantaloupe reads them from FilesystemSource.BasicLookupStrategy.path_prefix (/mnt/directories/, in the
+# properties below): the image of the manifest of dataset directory D with file name F is <path_prefix>D/F, and brif builds
+# that identifier as 'D%2FF' (app/src/libs/iiif_lib.py). Copy the images of each dataset into a directory of the same name
+# as its directory in the data claim (see the README). Size it for your collection.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cantaloupe-images
+  labels:
+    app.kubernetes.io/name: cantaloupe
+    app.kubernetes.io/part-of: brif
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # No storageClassName: the default class of your cluster. Set one here to use another.
+  resources:
+    requests:
+      storage: 20Gi
+---
+# The cache of Cantaloupe (FilesystemCache.pathname below). It can be deleted at any time: it fills up again.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cantaloupe-cache
+  labels:
+    app.kubernetes.io/name: cantaloupe
+    app.kubernetes.io/part-of: brif
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Taken from setup/cantaloupe/cantaloupe.properties.example: the same keys and values, without the sections of the sources
+# and caches that brif does not use (HTTP, S3, Azure, JDBC, Redis, heap) and without the HTTPS keystore, and with
+#   - the source path set to the mounted volume (path_prefix),
+#   - the admin control panel switched off (the example enables it with the user and password 'admin'),
+#   - the logs sent to the standard output at level info (the example writes files and logs at level debug),
+#   - the overlay (watermark) text emptied: overlays stay off, as in the example.
+# The container reads the file at /cantaloupe/cantaloupe.properties; a change needs 'kubectl rollout restart' (see the README).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cantaloupe-properties
+  labels:
+    app.kubernetes.io/name: cantaloupe
+    app.kubernetes.io/part-of: brif
+data:
+  cantaloupe.properties: |
+    # Server
+    temp_pathname =
+    http.enabled = true
+    http.host = 0.0.0.0
+    http.port = 8182
+    https.enabled = false
+    base_uri =
+    slash_substitute =
+    max_pixels = 10000000
+    max_scale = 1.0
+    meta_identifier.transformer = StandardMetaIdentifierTransformer
+    meta_identifier.transformer.StandardMetaIdentifierTransformer.delimiter = ;
+    log_error_responses = true
+    print_stack_trace_on_error_pages = true
+    delegate_script.enabled = false
+    delegate_script.pathname = delegates.rb
+
+    # Endpoints: the IIIF Image API versions 2 and 3, no control panel and no admin API
+    endpoint.iiif.1.enabled = false
+    endpoint.iiif.2.enabled = true
+    endpoint.iiif.3.enabled = true
+    endpoint.iiif.min_size = 64
+    endpoint.iiif.min_tile_size = 512
+    endpoint.iiif.restrict_to_sizes = false
+    endpoint.admin.enabled = false
+    endpoint.api.enabled = false
+    endpoint.health.dependency_check = true
+
+    # Source: the images are read from the volume mounted at /mnt/directories (cantaloupe.yaml)
+    source.static = FilesystemSource
+    source.delegate = false
+    FilesystemSource.lookup_strategy = BasicLookupStrategy
+    FilesystemSource.BasicLookupStrategy.path_prefix = /mnt/directories/
+
+    # Processing
+    processor.selection_strategy = AutomaticSelectionStrategy
+    processor.stream_retrieval_strategy = StreamStrategy
+    processor.fallback_retrieval_strategy = DownloadStrategy
+    processor.dpi = 150
+    processor.background_color = white
+    processor.downscale_filter = bicubic
+    processor.upscale_filter = bicubic
+    processor.downscale_linear = false
+    processor.sharpen = 0
+    processor.jpg.progressive = true
+    processor.jpg.quality = 80
+    processor.tif.compression = LZW
+
+    # Caches: derivatives and info.json are cached in the volume mounted at /var/cache/cantaloupe (cantaloupe.yaml)
+    cache.client.enabled = true
+    cache.client.max_age = 2592000
+    cache.client.shared_max_age =
+    cache.client.public = true
+    cache.client.private = false
+    cache.client.no_cache = false
+    cache.client.no_store = false
+    cache.client.must_revalidate = false
+    cache.client.proxy_revalidate = false
+    cache.client.no_transform = true
+    cache.server.source = FilesystemCache
+    cache.server.source.ttl_seconds = 2592000
+    cache.server.derivative.enabled = false
+    cache.server.derivative =
+    cache.server.derivative.ttl_seconds = 2592000
+    cache.server.info.enabled = true
+    cache.server.purge_missing = false
+    cache.server.resolve_first = false
+    cache.server.worker.enabled = false
+    cache.server.worker.interval = 86400
+    FilesystemCache.pathname = /var/cache/cantaloupe
+    FilesystemCache.dir.depth = 3
+    FilesystemCache.dir.name_length = 2
+
+    # Overlays (off)
+    overlays.strategy = BasicStrategy
+    overlays.BasicStrategy.enabled = false
+    overlays.BasicStrategy.type = string
+    overlays.BasicStrategy.string =
+    overlays.BasicStrategy.position = bottom right
+    overlays.BasicStrategy.inset = 10
+
+    # Logging: to the standard output of the container, read it with kubectl logs
+    log.application.level = info
+    log.application.ConsoleAppender.enabled = true
+    log.application.FileAppender.enabled = false
+    log.application.RollingFileAppender.enabled = false
+    log.error.RollingFileAppender.enabled = false
+    log.access.RollingFileAppender.enabled = false
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cantaloupe
+  labels:
+    app.kubernetes.io/name: cantaloupe
+    app.kubernetes.io/part-of: brif
+spec:
+  replicas: 1
+  # Both claims are ReadWriteOnce: a rolling update would run two pods on them for a while.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cantaloupe
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cantaloupe
+        app.kubernetes.io/part-of: brif
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: cantaloupe
+          # Built from setup/cantaloupe/Dockerfile by the CI of the repository, tagged with the commit it was built from.
+          # A real deployment pins tag@digest, see the README.
+          image: ghcr.io/pierrz/brif-cantaloupe:edaf8aa3a1f48c86d277908f76cd278e674eaa26
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8182
+          # The landing page answers without reading an image (Cantaloupe's /health endpoint is disabled with these properties).
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: config
+              mountPath: /cantaloupe/cantaloupe.properties
+              subPath: cantaloupe.properties
+              readOnly: true
+            # Not read-only so that you can 'kubectl cp' images into the running pod (README); Cantaloupe itself only reads them.
+            - name: images
+              mountPath: /mnt/directories
+            - name: cache
+              mountPath: /var/cache/cantaloupe
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            # The image starts the JVM with -Xmx2g: the memory limit has to leave room for the heap and for the rest of the JVM.
+            limits:
+              cpu: "2"
+              memory: 3Gi
+      volumes:
+        - name: config
+          configMap:
+            name: cantaloupe-properties
+        - name: images
+          persistentVolumeClaim:
+            claimName: cantaloupe-images
+        - name: cache
+          persistentVolumeClaim:
+            claimName: cantaloupe-cache

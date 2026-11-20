@@ -1,0 +1,73 @@
+# OPTIONAL: Flower, a web UI to watch the Celery worker and its tasks (docker-compose.monitoring.yml runs it too).
+# Not part of the base: apply it, once the base is running, with  kubectl apply -f deploy/k8s/optional/flower.yaml
+# Flower has no login here and shows task names and arguments. Do not publish it: reach it with
+#   kubectl -n brif port-forward svc/flower 5555:5555
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+  namespace: brif
+  labels:
+    app.kubernetes.io/name: flower
+    app.kubernetes.io/part-of: brif
+spec:
+  selector:
+    app.kubernetes.io/name: flower
+  ports:
+    - name: http
+      port: 5555
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+  namespace: brif
+  labels:
+    app.kubernetes.io/name: flower
+    app.kubernetes.io/part-of: brif
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: flower
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flower
+        app.kubernetes.io/part-of: brif
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flower
+          # A real deployment pins tag@digest, see the README.
+          image: mher/flower:2.2.0
+          imagePullPolicy: IfNotPresent
+          # The command of docker-compose.monitoring.yml; $(CELERY_BROKER_URL) is filled in by Kubernetes from the env below.
+          command: ["celery", "--broker=$(CELERY_BROKER_URL)", "flower"]
+          ports:
+            - name: http
+              containerPort: 5555
+          env:
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: brif-secret
+                  key: CELERY_BROKER_URL
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

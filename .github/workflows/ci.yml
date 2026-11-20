@@ -1,5 +1,6 @@
 # CI pipeline for brif — run the tests, then build and push Docker images to GHCR
 # Images: brif-backend (also used for celery), brif-cantaloupe
+# Also checks, on its own, that the Kubernetes example in deploy/k8s renders and is consistent (job k8s-example)
 
 name: CI pipeline
 
@@ -210,3 +211,33 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           echo "- cantaloupe: \`${REGISTRY}/pierrz/brif-cantaloupe@${DIGEST}\` (tags \`latest\`, \`${GITHUB_SHA}\`)" >> "$GITHUB_STEP_SUMMARY"
+
+  # No 'needs': it does not wait for the tests or the image builds, and they do not wait for it.
+  k8s-example:
+
+    name: Kubernetes example (render and checks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # kustomize is built into kubectl (on the runner) and renders without a cluster: an error fails the job
+      - name: Render deploy/k8s
+        run: |
+          kubectl version --client
+          kubectl kustomize deploy/k8s > "$RUNNER_TEMP/k8s-example.yaml"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          python-version: "3.14"
+          enable-cache: false
+
+      # resources on every container, nothing specific to a cluster, placeholders only in the Secret example, wiring complete
+      - name: Check the render and the manifests
+        run: uv run --no-project --with pyyaml==6.0.3 python scripts/check_k8s_example.py "$RUNNER_TEMP/k8s-example.yaml" deploy/k8s

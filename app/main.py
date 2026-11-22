@@ -60,7 +60,9 @@ app.add_middleware(
 app.include_router(dashboard.router)
 app.include_router(api_endpoints.router)
 app.include_router(tasks.router)
-app.include_router(app_init_endpoints.router)
+if app_config.ENABLE_TEST_ROUTES:
+    # helper routes for the tests and a local setup, off by default: some of them write and none needs a login
+    app.include_router(app_init_endpoints.router)
 
 # database
 try:

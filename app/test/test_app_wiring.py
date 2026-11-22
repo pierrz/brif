@@ -6,7 +6,10 @@ Meant to catch what a FastAPI / Starlette / pydantic upgrade could change silent
 """
 
 import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -61,6 +64,37 @@ def test_the_routes_of_the_api_answer_get_only(client, url):
         response = getattr(client, method)(url)
         assert response.status_code == 405, (method, url)
         assert response.json() == {"detail": "Method Not Allowed"}
+
+
+@pytest.mark.parametrize("value, mounted", [(None, False), ("false", False), ("true", True)])
+def test_the_test_routes_are_mounted_only_when_asked(value, mounted):
+    """
+    The /test helper routes write to the database and need no login (INFRA-243): they are off unless ENABLE_TEST_ROUTES is true.
+    main.py is imported in a child process: the app of this process is built once, with the flag on (conftest.py).
+    A POST on /test/load_db tells a mounted route (405, GET only) from an unmounted one (404) without running it.
+    """
+    env = {name: v for name, v in os.environ.items() if name != "ENABLE_TEST_ROUTES"}
+    if value is not None:
+        env["ENABLE_TEST_ROUTES"] = value
+    child = (
+        "import json, main\n"
+        "from fastapi.testclient import TestClient\n"
+        "c = TestClient(main.app)\n"
+        "print(json.dumps([c.get('/docs').status_code, c.get('/test/api_live').status_code, c.post('/test/load_db').status_code]))\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", child],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=50,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    docs, api_live, load_db = json.loads(result.stdout.splitlines()[-1])
+    assert docs == 200  # the rest of the app is there either way
+    assert (api_live, load_db) == ((200, 405) if mounted else (404, 404))
 
 
 def test_the_openapi_document_lists_the_documented_routes_only(client):

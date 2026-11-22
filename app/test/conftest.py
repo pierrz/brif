@@ -38,6 +38,7 @@ CANTALOUPE = CantaloupeDouble().start()
 
 TEST_ENV = {
     "SECRET_KEY": "test-secret-key",
+    "ENABLE_TEST_ROUTES": "true",  # the /test routes are off by default (test_app_wiring.py checks that)
     "APP_SUBDOMAIN": "brif",
     "BASE_URL": "example.org",
     "API_IMAGE_BACKEND": CANTALOUPE.base_url,

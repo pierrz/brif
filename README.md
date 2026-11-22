@@ -67,6 +67,8 @@ Then you're left with creating the `.env` environment file.
 
 *NB: For all these required files, you'll find `xxxxxx.example` sample files ready to adapt.*
 
+*NB: The helper routes under `/test` (`app/test/app_init_endpoints.py`) are off by default: some of them write to the database and none needs a login. Set `ENABLE_TEST_ROUTES=true` in `.env` to mount them on a local setup; leave it unset on a server. The test suite sets it itself.*
+
 <br>
 
 #### Cantaloupe

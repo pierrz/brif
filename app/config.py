@@ -26,6 +26,9 @@ class Config(BaseSettings):
     )
     DATA_DIR: Path = Path(os.getenv("DATA_DIR", Path(Path(os.getcwd()).parent, "data")))
     SECRET_KEY: Optional[str] = os.getenv("SECRET_KEY")
+    # The helper routes under /test (app/test/app_init_endpoints.py) write to the database and the data directory and need no login:
+    # they are mounted only when ENABLE_TEST_ROUTES is true (the test suite and a local setup set it; a deployment does not).
+    ENABLE_TEST_ROUTES: bool = False
 
     # local or remote settings
     # TODO: replace 'LOCAL_DEV' with nginx container check

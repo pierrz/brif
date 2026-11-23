@@ -99,6 +99,34 @@ def find_input_dataset(dataset_dir: str, dataset_name: str) -> Optional[Path]:
     return None
 
 
+def find_in_dataset(root_dir: Path, dataset_name: str, *names: str) -> Optional[Path]:
+    """
+    Builds a path below the directory of a dataset (root_dir/dataset_name, e.g. DATA_DIR/output/<dataset>) for the routes
+    of the API. The names come from a URL, nothing here trusts them: each must be a plain name (not empty, not '.' or '..',
+    no slash, no backslash, no null byte) and the path, once its symbolic links are resolved, must be inside the directory
+    of the dataset, which itself must be inside root_dir.
+    Nothing is read: the path does not have to exist, a route keeps its own answer for a dataset or a file that is not there.
+    :param root_dir: the directory holding the datasets, DATA_DIR/input or DATA_DIR/output
+    :param dataset_name: name of the directory of the dataset
+    :param names: the names to follow below the directory of the dataset
+    :return: the resolved path, or None when a name is not plain or the path leaves its directory
+    """
+    for name in (dataset_name, *names):
+        if name in ("", ".", "..") or any(char in name for char in "/\\\0"):
+            return None
+
+    try:
+        root = Path(root_dir).resolve()
+        dataset_dir = Path(root, dataset_name).resolve()
+        path = Path(dataset_dir, *names).resolve()
+    except (OSError, ValueError):  # a name that is no file name (a lone surrogate)
+        return None
+
+    if dataset_dir.is_relative_to(root) and path.is_relative_to(dataset_dir):
+        return path
+    return None
+
+
 def init_iiif_pipeline_lite(dataset_dir, dataset_name):
     chain = itemize.s(dataset_dir, dataset_name) | generate_manifests.s()
     return chain()

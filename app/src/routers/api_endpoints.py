@@ -2,10 +2,11 @@ import json
 from pathlib import Path
 
 import src.mappings.item_key_names as ikn
+from config import app_config
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from src.libs.main_lib import get_dirs, get_mapping, load_json
-from src.libs.router_lib import select_random_manifest
+from src.libs.router_lib import find_in_dataset, select_random_manifest
 from templates.backend_templates import templates
 
 prefix = "/iiif/pres"
@@ -32,6 +33,9 @@ async def mapping_api(dataset_name: str):
     :param dataset_name: the dataset full name
     :return: the mapping JSON data
     """
+    input_dir = Path(app_config.DATA_DIR, "input")
+    if find_in_dataset(input_dir, dataset_name, "mapping.json") is None:
+        return JSONResponse({"error": "Dataset not found"}, status_code=404)
     mapping_data = get_mapping(dataset_name)[0]
     return JSONResponse({"mapping": mapping_data})
 
@@ -46,7 +50,16 @@ async def sub_manifest_api(dataset_name: str, manifest_id: str, sub_level: str, 
     :param filename: a specific filename at that level
     :return: the JSON data for this sub-level
     """
-    manifest_path = Path(get_dirs(dataset_name)[1], manifest_id, sub_level, filename)
+    manifest_path = find_in_dataset(
+        Path(app_config.DATA_DIR, "output"),
+        dataset_name,
+        ikn.manif_name,
+        manifest_id,
+        sub_level,
+        filename,
+    )
+    if manifest_path is None:
+        return JSONResponse({"error": "Manifest not found"}, status_code=404)
     try:
         data = load_json(manifest_path)
     except (FileNotFoundError, json.JSONDecodeError):
@@ -62,9 +75,15 @@ async def manifest_api(dataset_name: str, manifest_id: str):
     :param manifest_id: the manifest id
     :return: the JSON data for this manifest
     """
-    manifest_path = Path(
-        get_dirs(dataset_name)[1], manifest_id, f"{ikn.manif_name}.json"
+    manifest_path = find_in_dataset(
+        Path(app_config.DATA_DIR, "output"),
+        dataset_name,
+        ikn.manif_name,
+        manifest_id,
+        f"{ikn.manif_name}.json",
     )
+    if manifest_path is None:
+        return JSONResponse({"error": "Manifest not found"}, status_code=404)
     try:
         data = load_json(manifest_path)
     except (FileNotFoundError, json.JSONDecodeError):
@@ -79,9 +98,15 @@ async def collection_manifest_api(dataset_name: str):
     :param dataset_name: the dataset full name
     :return: the JSON data for this collection
     """
-    coll_manifest_path = Path(
-        get_dirs(dataset_name)[1], ikn.coll_name, f"{ikn.coll_manif_name}.json"
+    coll_manifest_path = find_in_dataset(
+        Path(app_config.DATA_DIR, "output"),
+        dataset_name,
+        ikn.manif_name,
+        ikn.coll_name,
+        f"{ikn.coll_manif_name}.json",
     )
+    if coll_manifest_path is None:
+        return JSONResponse({"error": "Manifest not found"}, status_code=404)
     try:
         data = load_json(coll_manifest_path)
     except (FileNotFoundError, json.JSONDecodeError):
@@ -97,6 +122,9 @@ async def image_api_example(dataset_name: str):
     :param dataset_name: the dataset full name
     :return: the JSON data for this collection
     """
+    output_dir = Path(app_config.DATA_DIR, "output")
+    if find_in_dataset(output_dir, dataset_name, ikn.manif_name) is None:
+        return JSONResponse({"error": "Dataset not found"}, status_code=404)
     manifests_dir = Path(get_dirs(dataset_name)[1])
     img_url = select_random_manifest(manifests_dir, "image")
     return RedirectResponse(img_url)
@@ -109,6 +137,9 @@ async def manifest_api_example_view(dataset_name: str):
     :param dataset_name: the dataset full name
     :return: the JSON data for this collection
     """
+    output_dir = Path(app_config.DATA_DIR, "output")
+    if find_in_dataset(output_dir, dataset_name, ikn.manif_name) is None:
+        return JSONResponse({"error": "Dataset not found"}, status_code=404)
     manifests_dir = Path(get_dirs(dataset_name)[1])
     view_url = f"{prefix}/{select_random_manifest(manifests_dir)}/view"
     return RedirectResponse(view_url)
@@ -121,6 +152,9 @@ async def manifest_api_example(dataset_name: str):
     :param dataset_name: the dataset full name
     :return: the JSON data for the retrieved manifest
     """
+    output_dir = Path(app_config.DATA_DIR, "output")
+    if find_in_dataset(output_dir, dataset_name, ikn.manif_name) is None:
+        return JSONResponse({"error": "Dataset not found"}, status_code=404)
     manifests_dir = Path(get_dirs(dataset_name)[1])
     manifest_url = (
         f"{prefix}/{select_random_manifest(manifests_dir)}/{ikn.manif_name}.json"

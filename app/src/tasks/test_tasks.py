@@ -37,7 +37,7 @@ def dummy_task(input_int: int) -> List[int]:
         "CREATE TABLE test_celery (id serial PRIMARY KEY, input integer, result integer);"
     )
     cur.execute(
-        f"INSERT INTO test_celery (input, result) VALUES ({input_int}, {result});"
+        "INSERT INTO test_celery (input, result) VALUES (%s, %s);", (input_int, result)
     )
     conn.commit()
 

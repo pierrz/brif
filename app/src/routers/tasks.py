@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from src.db.database import delete_row
 from src.libs.flash import message
+from src.libs.router_lib import find_input_dataset
 from src.tasks.etl.task_etl_delete import delete_dataset_task
 from src.tasks.etl.task_etl_generate_manifests import generate_manifests
 from src.tasks.etl.task_etl_itemize import itemize
@@ -38,6 +39,12 @@ async def delete_dataset(request: Request, dataset_dir, dataset_name):
 
 @router.get("/process_dataset/{dataset_dir}/{dataset_name}")
 async def process_dataset(request: Request, dataset_dir, dataset_name):
+
+    if find_input_dataset(dataset_dir, dataset_name) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found in the input directory.",
+        )
 
     chain = (
         itemize.s(dataset_dir, dataset_name)

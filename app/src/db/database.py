@@ -9,6 +9,9 @@ from src.db.models import Dataset, dataset_from_dict
 fields = Dataset(
     fullname="tmp", dir_name="tmp", mapping="tmp", status="tmp"
 ).field_list()
+# The column names come from the model above, never from a request: they may stay in the SQL text.
+# Every value that comes from elsewhere (a dataset name, a status, ...) is a %s parameter of cur.execute(),
+# so a quote or a semicolon in it stays plain text. A literal % in a statement would have to be written %%.
 columns = str(fields)[1:-1].replace("'", "")
 
 
@@ -62,15 +65,16 @@ def prepare_dashboard_table():
 def insert_row(dataset: Dataset):
     conn, cur = init_db_connection()
     cur.execute(
-        query=f"""INSERT INTO dashboard ({columns})
-                        VALUES ('{dataset.fullname}',
-                                '{dataset.dir_name}',
-                                '{dataset.mapping}',
-                                {dataset.total},
-                                {dataset.valid},
-                                {dataset.valid_img},
-                                'processed'
-                        )"""
+        f"""INSERT INTO dashboard ({columns})
+            VALUES (%s, %s, %s, %s, %s, %s, 'processed')""",
+        (
+            dataset.fullname,
+            dataset.dir_name,
+            dataset.mapping,
+            dataset.total,
+            dataset.valid,
+            dataset.valid_img,
+        ),
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -79,7 +83,14 @@ def insert_row(dataset: Dataset):
 def load_input_dataset(dataset: Dataset):
     conn, cur = init_db_connection()
     cur.execute(
-        query=f"INSERT INTO dashboard (fullname, dir_name, total, mapping, status) VALUES ('{dataset.fullname}', '{dataset.dir_name}', '{dataset.total}', '{dataset.mapping}', '{dataset.status}')"
+        "INSERT INTO dashboard (fullname, dir_name, total, mapping, status) VALUES (%s, %s, %s, %s, %s)",
+        (
+            dataset.fullname,
+            dataset.dir_name,
+            dataset.total,
+            dataset.mapping,
+            dataset.status,
+        ),
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -88,12 +99,13 @@ def load_input_dataset(dataset: Dataset):
 def update_row(dataset_fullname):
     conn, cur = init_db_connection()
     cur.execute(
-        f"""UPDATE dashboard
+        """UPDATE dashboard
         SET total = null,
             valid = null,
             valid_img = null,
             status = 'unprocessed'
-        WHERE fullname = '{dataset_fullname}'"""
+        WHERE fullname = %s""",
+        (dataset_fullname,),
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -102,9 +114,10 @@ def update_row(dataset_fullname):
 def update_dataset_status(dataset_fullname: str, status: str):
     conn, cur = init_db_connection()
     cur.execute(
-        f"""UPDATE dashboard
-        SET status = '{status}'
-        WHERE fullname = '{dataset_fullname}'"""
+        """UPDATE dashboard
+        SET status = %s
+        WHERE fullname = %s""",
+        (status, dataset_fullname),
     )
     conn.commit()
     close_db_connection(cur, conn)
@@ -112,7 +125,7 @@ def update_dataset_status(dataset_fullname: str, status: str):
 
 def delete_row(dataset_fullname):
     conn, cur = init_db_connection()
-    cur.execute(f"DELETE FROM dashboard WHERE fullname = '{dataset_fullname}'")
+    cur.execute("DELETE FROM dashboard WHERE fullname = %s", (dataset_fullname,))
     conn.commit()
     close_db_connection(cur, conn)
 
@@ -121,16 +134,11 @@ def get_db_data(datasets_list):
     if not datasets_list:
         return []
 
-    query_str = str()
-    for idx, dataset in enumerate(datasets_list):
-        if idx == 0:
-            query_str += f"fullname = '{dataset}'"
-        else:
-            query_str += f" OR fullname = '{dataset}'"
-
-    full_query = f"SELECT {columns} FROM dashboard WHERE {query_str}"
     conn, cur = init_db_connection()
-    cur.execute(full_query)
+    cur.execute(
+        f"SELECT {columns} FROM dashboard WHERE fullname = ANY(%s)",
+        (list(datasets_list),),
+    )
     data = cur.fetchall()
     close_db_connection(cur, conn)
 

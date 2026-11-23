@@ -2,11 +2,12 @@ import csv
 import os
 import random
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import src.mappings.item_key_names as ikn
+from config import app_config
 from src.db.models import InputDataset
-from src.libs.main_lib import load_json
+from src.libs.main_lib import get_dataset_path, load_json
 from src.tasks.etl.task_etl_generate_manifests import generate_manifests
 from src.tasks.etl.task_etl_itemize import itemize
 
@@ -72,6 +73,30 @@ def prepare_input_datasets(root_dir, dataset_files):
             print("Dataset registered.")
 
     return datasets_pack
+
+
+def find_input_dataset(dataset_dir: str, dataset_name: str) -> Optional[Path]:
+    """
+    Looks for a dataset of the dashboard: a file in a directory of DATA_DIR/input.
+    The two names come from a URL, nothing here trusts them: each must be a plain name (no separator,
+    not '.' or '..') and the file, once its symbolic links are resolved, must be a regular file inside the input directory.
+    :param dataset_dir: name of the directory containing the dataset
+    :param dataset_name: name of the dataset file
+    :return: the resolved path of the file, or None when the names do not designate such a file
+    """
+    for name in (dataset_dir, dataset_name):
+        if name in ("", ".", "..") or Path(name).name != name:
+            return None
+
+    try:
+        input_dir = Path(app_config.DATA_DIR, "input").resolve()
+        dataset_path = get_dataset_path(dataset_dir, dataset_name).resolve()
+    except (OSError, ValueError):  # a name too long, a null byte, ...
+        return None
+
+    if dataset_path.is_relative_to(input_dir) and dataset_path.is_file():
+        return dataset_path
+    return None
 
 
 def init_iiif_pipeline_lite(dataset_dir, dataset_name):

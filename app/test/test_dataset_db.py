@@ -3,8 +3,10 @@ Dataset load, read and delete: the Dataset model, the SQL of the dashboard table
 and the Celery tasks that write to it.
 """
 
+import pytest
 from src.db.database import (delete_row, get_db_data, insert_row,
-                             load_input_dataset, update_dataset_status)
+                             load_input_dataset, update_dataset_status,
+                             update_row)
 from src.db.models import Dataset, InputDataset
 from src.tasks.etl.task_etl_delete import delete_dataset_task
 from src.tasks.etl.task_etl_load_db import load_results_to_db
@@ -135,3 +137,169 @@ def test_delete_task_removes_the_output_and_resets_the_row(data_dir):
     assert not output.exists()
     [stored] = get_db_data([FULLNAME])
     assert (stored.status, stored.total, stored.valid) == ("unprocessed", None, None)
+
+
+# ---------------------------------------------------------------- the values are parameters, not SQL (INFRA-255)
+
+OTHER = "other/bystander.csv"
+# the first one makes every row match, the second one ends the statement and starts another one
+INJECTIONS = ["a/none.csv' OR '1'='1", "a/none.csv'; DELETE FROM dashboard; --"]
+QUOTED = "it's; DROP TABLE dashboard; -- \\ %s %(x)s \"q\"/o'brien.csv"
+
+
+def a_bystander():
+    """
+    A processed row no statement about another name may touch
+    """
+    insert_row(
+        Dataset(
+            fullname=OTHER,
+            dir_name="other",
+            mapping="default",
+            total=7,
+            valid=5,
+            valid_img=9,
+            status="whatever",
+        )
+    )
+    return get_db_data([OTHER])
+
+
+@pytest.mark.parametrize("injection", INJECTIONS)
+@pytest.mark.parametrize(
+    "write",
+    [
+        lambda name: update_dataset_status(name, "hacked"),
+        update_row,
+        delete_row,
+    ],
+    ids=["update_dataset_status", "update_row", "delete_row"],
+)
+def test_a_name_with_a_quote_changes_that_name_only(write, injection):
+    before = a_bystander()
+    write(injection)
+    assert get_db_data([OTHER]) == before
+
+
+@pytest.mark.parametrize("injection", INJECTIONS)
+def test_reading_a_name_with_a_quote_finds_nothing(injection):
+    a_bystander()
+    load_input_dataset(an_input_dataset())
+    assert get_db_data([injection]) == []
+    assert [d.fullname for d in get_db_data([injection, OTHER])] == [OTHER]
+
+
+@pytest.mark.parametrize("injection", INJECTIONS)
+def test_the_status_is_a_value_too(injection):
+    before = a_bystander()
+    load_input_dataset(an_input_dataset())
+    update_dataset_status(FULLNAME, injection)
+    assert [d.status for d in get_db_data([FULLNAME])] == [injection]
+    assert get_db_data([OTHER]) == before
+
+
+@pytest.mark.parametrize("injection", INJECTIONS)
+@pytest.mark.parametrize(
+    "write",
+    [
+        lambda name: insert_row(
+            Dataset(fullname=name, dir_name="a", mapping="default", status="x")
+        ),
+        lambda name: load_input_dataset(an_input_dataset(name)),
+    ],
+    ids=["insert_row", "load_input_dataset"],
+)
+def test_a_name_with_a_quote_is_stored_as_it_is(write, injection):
+    before = a_bystander()
+    write(injection)
+    assert [d.fullname for d in get_db_data([injection])] == [injection]
+    assert get_db_data([OTHER]) == before
+
+
+def test_a_name_with_a_quote_and_a_semicolon_is_plain_text():
+    """
+    It is stored, read, updated, reset and deleted as the text it is; the table and the other rows are there after
+    """
+    before = a_bystander()
+
+    load_input_dataset(an_input_dataset(QUOTED, total=2))
+    [loaded] = get_db_data([QUOTED])
+    assert (loaded.fullname, loaded.dir_name, loaded.total) == (
+        QUOTED,
+        QUOTED.split("/")[0],
+        2,
+    )
+
+    update_dataset_status(QUOTED, "in progress")
+    assert [d.status for d in get_db_data([QUOTED])] == ["in progress"]
+
+    delete_row(QUOTED)
+    insert_row(
+        Dataset(
+            fullname=QUOTED,
+            dir_name=QUOTED.split("/")[0],
+            mapping="it's",
+            total=1,
+            valid=1,
+            valid_img=1,
+            status="x",
+        )
+    )
+    [inserted] = get_db_data([QUOTED])
+    assert (inserted.fullname, inserted.mapping, inserted.status) == (
+        QUOTED,
+        "it's",
+        "processed",
+    )
+
+    update_row(QUOTED)
+    assert [d.status for d in get_db_data([QUOTED])] == ["unprocessed"]
+
+    delete_row(QUOTED)
+    assert get_db_data([QUOTED]) == []
+    assert get_db_data([OTHER]) == before
+
+
+def test_a_quote_in_the_name_of_a_dataset_of_the_dashboard_does_not_break_the_page(
+    page_client, data_dir
+):
+    directory = data_dir / "input" / "o'brien"
+    directory.mkdir()
+    (directory / "it's data.csv").write_text(
+        "dc:identifier,dc:title\nhttp://example.org/1,One\n"
+    )
+
+    response = page_client.get("/demo")
+
+    assert response.status_code == 200
+    assert [d.status for d in get_db_data(["o'brien/it's data.csv"])] == ["unprocessed"]
+
+
+def test_none_is_stored_as_null_by_insert_row():
+    insert_row(
+        Dataset(
+            fullname=FULLNAME, dir_name="test_dataset", mapping="default", status="x"
+        )
+    )
+    [stored] = get_db_data([FULLNAME])
+    assert (stored.total, stored.valid, stored.valid_img) == (0, None, None)
+
+    delete_row(FULLNAME)
+    insert_row(
+        Dataset(
+            fullname=FULLNAME,
+            dir_name="test_dataset",
+            mapping="default",
+            total=None,
+            status="x",
+        )
+    )
+    [stored] = get_db_data([FULLNAME])
+    assert (stored.total, stored.valid, stored.valid_img) == (None, None, None)
+
+
+def test_none_is_stored_as_null_by_load_input_dataset():
+    load_input_dataset(an_input_dataset(total=None))
+    [stored] = get_db_data([FULLNAME])
+    assert (stored.total, stored.valid, stored.valid_img) == (None, None, None)
+    assert stored.status == "unprocessed"

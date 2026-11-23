@@ -86,6 +86,21 @@ def test_settings_of_the_app():
     )  # the value is the string "Enabled", whatever works as True
 
 
+def test_the_configuration_can_be_listed():
+    """
+    Flower (worker 'inspect conf') and 'celery inspect conf' read the whole configuration with table() (INFRA-256).
+    Handing Celery the settings object itself made it fail: it lists the attributes with dir() and pydantic
+    puts a '__signature__' there that raises on an instance.
+    """
+    table = celery.conf.table(censored=False)
+    assert table["broker_url"] == os.environ["CELERY_BROKER_URL"]
+    assert table["result_backend"] == os.environ["CELERY_RESULT_BACKEND"]
+    assert table["imports"] == celery_config.imports
+    assert table["task_acks_late"] == celery_config.task_acks_late
+    assert table["timezone"] == "Europe/Amsterdam"
+    assert not [name for name in table if name.startswith("__")]
+
+
 def test_messages_are_json():
     """
     Arguments and results go through JSON: tuples come back as lists (see below)

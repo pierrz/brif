@@ -3,8 +3,6 @@ Dataset load, read and delete: the Dataset model, the SQL of the dashboard table
 and the Celery tasks that write to it.
 """
 
-import psycopg2.errors
-import pytest
 from src.db.database import (delete_row, get_db_data, insert_row,
                              load_input_dataset, update_dataset_status)
 from src.db.models import Dataset, InputDataset
@@ -127,13 +125,6 @@ def test_delete_task_has_nothing_to_do_when_the_dataset_was_never_processed(data
     assert [d.fullname for d in get_db_data([FULLNAME])] == [FULLNAME]
 
 
-@pytest.mark.xfail(
-    raises=psycopg2.errors.UndefinedColumn,
-    strict=True,
-    reason="BUG, not fixed here: update_row() sets the column 'valid_imgs', the table has "
-    "'valid_img'. Once the output files are deleted the task fails and the row is not reset. "
-    "Remove this mark when update_row() is fixed.",
-)
 def test_delete_task_removes_the_output_and_resets_the_row(data_dir):
     output = data_dir / "output" / "test_dataset"
     (output / "manifest").mkdir(parents=True)

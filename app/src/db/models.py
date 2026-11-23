@@ -13,7 +13,7 @@ class Dataset(BaseModel):
     fullname: str
     dir_name: str
     mapping: str
-    total: int = 0
+    total: Optional[int] = 0
     valid: Optional[int] = None
     valid_img: Optional[int] = None
     status: str

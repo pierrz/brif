@@ -8,6 +8,7 @@ import json
 from src.db.database import get_db_data, insert_row, load_input_dataset
 from src.db.models import Dataset, InputDataset
 from src.routers.dashboard import gather_input_datasets, sync_datasets_with_db
+from src.tasks.etl.task_etl_delete import delete_dataset_task
 
 FULLNAME = "test_dataset/test_records.csv"
 RECORDS_HEADER = "dc:identifier,dc:title\n"
@@ -132,6 +133,28 @@ def test_page_lists_a_processed_dataset_with_its_apis_and_the_delete_action(
     assert "/iiif/pres/test_dataset/image_api_example" in page
     assert f'href="/task/delete_dataset/{FULLNAME}"' in page
     assert "/task/process_dataset/" not in page
+
+
+def test_page_offers_to_process_a_dataset_again_once_its_output_is_deleted(
+    page_client, sample_dataset
+):
+    (sample_dataset / "output" / "test_dataset" / "manifest").mkdir(parents=True)
+    insert_row(
+        Dataset(
+            fullname=FULLNAME,
+            dir_name="test_dataset",
+            mapping="default",
+            total=3,
+            valid=3,
+            valid_img=6,
+            status="processed",
+        )
+    )
+    delete_dataset_task("test_dataset", "test_records.csv")
+    response = page_client.get("/demo")
+    assert response.status_code == 200
+    assert f'href="/task/process_dataset/{FULLNAME}"' in response.text
+    assert "/task/delete_dataset/" not in response.text
 
 
 def test_page_does_not_list_datasets_that_are_gone_from_the_input_directory(

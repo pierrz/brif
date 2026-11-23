@@ -91,7 +91,7 @@ def update_row(dataset_fullname):
         f"""UPDATE dashboard
         SET total = null,
             valid = null,
-            valid_imgs = null,
+            valid_img = null,
             status = 'unprocessed'
         WHERE fullname = '{dataset_fullname}'"""
     )

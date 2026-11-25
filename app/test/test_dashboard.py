@@ -131,6 +131,10 @@ def test_page_lists_a_processed_dataset_with_its_apis_and_the_delete_action(
     page = page_client.get("/demo").text
     assert "/iiif/pres/test_dataset/collection/collection_manifest.json" in page
     assert "/iiif/pres/test_dataset/image_api_example" in page
+    assert (
+        '<a href="/iiif/pres/test_dataset/manifest_api_example_view">viewer</a>' in page
+    )
+    assert ">view</a>" not in page
     assert f'href="/task/delete_dataset/{FULLNAME}"' in page
     assert "/task/process_dataset/" not in page
 

@@ -2,6 +2,8 @@
 
 A boilerplate tool based on Docker, designed to streamline the development and deployment of IIIF compliant platforms.
 
+brif is the data backend (APIs and ETL) of [muzai.io](https://muzai.io), a public IIIF platform: its [live search](https://muzai.io/display/results/objects) shows what a platform built with brif publishes.
+
 Embedded with `FastAPI, Celery + Rabbit-MQ + Flower, Postgres + PGAdmin, Cantaloupe, Bulma`
 and provided with an example configuration for `Nginx`.
 
